@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>不動産計算ツール</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+–bg: #0f1117;
+–surface: #1a1d27;
+–surface2: #22263a;
+–border: #2e3452;
+–accent: #4f8ef7;
+–accent2: #7c5cbf;
+–gold: #e8c96a;
+–text: #e8eaf6;
+–text2: #8b90b0;
+–success: #4caf9a;
+–radius: 14px;
+}
+
+- { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+font-family: ‘Noto Sans JP’, sans-serif;
+background: var(–bg);
+color: var(–text);
+min-height: 100vh;
+padding-bottom: 80px;
+}
+
+header {
+background: linear-gradient(135deg, #1a1d27 0%, #22263a 100%);
+padding: 20px 16px 16px;
+border-bottom: 1px solid var(–border);
+position: sticky;
+top: 0;
+z-index: 100;
+}
+
+header h1 {
+font-size: 18px;
+font-weight: 700;
+letter-spacing: 0.05em;
+color: var(–gold);
+}
+
+header p {
+font-size: 11px;
+color: var(–text2);
+margin-top: 2px;
+}
+
+.tabs {
+display: flex;
+overflow-x: auto;
+gap: 4px;
+padding: 12px 16px;
+background: var(–surface);
+border-bottom: 1px solid var(–border);
+scrollbar-width: none;
+position: sticky;
+top: 69px;
+z-index: 99;
+}
+
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+flex-shrink: 0;
+padding: 8px 14px;
+border-radius: 20px;
+font-size: 12px;
+font-weight: 500;
+border: 1px solid var(–border);
+background: transparent;
+color: var(–text2);
+cursor: pointer;
+transition: all 0.2s;
+white-space: nowrap;
+}
+
+.tab.active {
+background: var(–accent);
+border-color: var(–accent);
+color: #fff;
+}
+
+.tab-content {
+display: none;
+padding: 16px;
+animation: fadeIn 0.2s ease;
+}
+
+.tab-content.active { display: block; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+.card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: var(–radius);
+padding: 16px;
+margin-bottom: 12px;
+}
+
+.card-title {
+font-size: 13px;
+font-weight: 700;
+color: var(–gold);
+margin-bottom: 14px;
+display: flex;
+align-items: center;
+gap: 6px;
+}
+
+.card-title span { font-size: 16px; }
+
+.field {
+margin-bottom: 12px;
+}
+
+label {
+display: block;
+font-size: 11px;
+color: var(–text2);
+margin-bottom: 5px;
+font-weight: 500;
+}
+
+input, select {
+width: 100%;
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: 8px;
+padding: 10px 12px;
+font-size: 15px;
+color: var(–text);
+font-family: ‘DM Mono’, monospace;
+outline: none;
+transition: border-color 0.2s;
+-webkit-appearance: none;
+}
+
+input:focus, select:focus { border-color: var(–accent); }
+
+select {
+background-image: url(“data:image/svg+xml,%3Csvg xmlns=‘http://www.w3.org/2000/svg’ width=‘12’ height=‘12’ viewBox=‘0 0 24 24’ fill=‘none’ stroke=’%238b90b0’ stroke-width=‘2’%3E%3Cpath d=‘M6 9l6 6 6-6’/%3E%3C/svg%3E”);
+background-repeat: no-repeat;
+background-position: right 12px center;
+padding-right: 32px;
+}
+
+.btn {
+width: 100%;
+padding: 13px;
+border-radius: 10px;
+border: none;
+background: linear-gradient(135deg, var(–accent), var(–accent2));
+color: #fff;
+font-size: 14px;
+font-weight: 700;
+cursor: pointer;
+margin-top: 4px;
+transition: opacity 0.2s;
+}
+
+.btn:active { opacity: 0.85; }
+
+.result-grid {
+display: grid;
+gap: 8px;
+margin-top: 12px;
+}
+
+.result-item {
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 12px 14px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+.result-label {
+font-size: 11px;
+color: var(–text2);
+}
+
+.result-value {
+font-family: ‘DM Mono’, monospace;
+font-size: 16px;
+font-weight: 500;
+color: var(–accent);
+}
+
+.result-value.big {
+font-size: 20px;
+color: var(–gold);
+}
+
+.result-value.green { color: var(–success); }
+
+.divider {
+border: none;
+border-top: 1px solid var(–border);
+margin: 12px 0;
+}
+
+.row2 {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 8px;
+}
+
+.note {
+font-size: 10px;
+color: var(–text2);
+margin-top: 6px;
+line-height: 1.5;
+}
+
+.tag {
+display: inline-block;
+font-size: 10px;
+padding: 2px 8px;
+border-radius: 10px;
+background: var(–surface2);
+border: 1px solid var(–border);
+color: var(–text2);
+margin-right: 4px;
+margin-bottom: 4px;
+}
+
+table {
+width: 100%;
+border-collapse: collapse;
+font-size: 12px;
+margin-top: 8px;
+}
+
+th {
+background: var(–surface2);
+padding: 8px;
+text-align: left;
+color: var(–text2);
+font-weight: 500;
+border-bottom: 1px solid var(–border);
+}
+
+td {
+padding: 8px;
+border-bottom: 1px solid var(–border);
+font-family: ‘DM Mono’, monospace;
+}
+
+tr:last-child td { border-bottom: none; }
+
+tr.highlight td { color: var(–gold); font-weight: 500; }
+</style>
+
+</head>
+<body>
+
+<header>
+  <h1>🏠 不動産計算ツール</h1>
+  <p>Professional Real Estate Calculator</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('tanka')">単価・変換</button>
+  <button class="tab" onclick="switchTab('rimawari')">利回り</button>
+  <button class="tab" onclick="switchTab('loan')">ローン</button>
+  <button class="tab" onclick="switchTab('shohi')">諸費用</button>
+  <button class="tab" onclick="switchTab('taiyo')">耐用年数</button>
+</div>
+
+<!-- タブ1：単価・変換 -->
+
+<div id="tab-tanka" class="tab-content active">
+  <div class="card">
+    <div class="card-title"><span>📐</span>平米 ↔ 坪 変換</div>
+    <div class="row2">
+      <div class="field">
+        <label>平米数（㎡）</label>
+        <input type="number" inputmode="decimal" id="sqm" placeholder="例：80" oninput="convertArea('sqm')">
+      </div>
+      <div class="field">
+        <label>坪数（坪）</label>
+        <input type="number" inputmode="decimal" id="tsubo" placeholder="例：24.2" oninput="convertArea('tsubo')">
+      </div>
+    </div>
+    <div class="note">1坪 = 3.30579㎡</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>💴</span>単価計算</div>
+    <div class="field">
+      <label>物件価格（万円）</label>
+      <input type="number" inputmode="decimal" id="price" placeholder="例：3500" oninput="calcTanka()">
+    </div>
+    <div class="field">
+      <label>面積（㎡）</label>
+      <input type="number" inputmode="decimal" id="area_sqm" placeholder="例：80" oninput="calcTanka()">
+    </div>
+    <div class="result-grid" id="tanka-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">平米単価</span>
+        <span class="result-value big" id="r-sqm-price">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">坪単価</span>
+        <span class="result-value big" id="r-tsubo-price">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">面積（坪換算）</span>
+        <span class="result-value" id="r-tsubo-area">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- タブ2：利回り -->
+
+<div id="tab-rimawari" class="tab-content">
+  <div class="card">
+    <div class="card-title"><span>📈</span>利回り計算</div>
+    <div class="field">
+      <label>物件価格（万円）</label>
+      <input type="number" inputmode="decimal" id="r-price" placeholder="例：3000" oninput="calcRimawari()">
+    </div>
+    <div class="field">
+      <label>年間家賃収入（万円）</label>
+      <input type="number" inputmode="decimal" id="r-rent" placeholder="例：180" oninput="calcRimawari()">
+    </div>
+    <div class="field">
+      <label>年間諸経費（万円）</label>
+      <input type="number" inputmode="decimal" id="r-cost" placeholder="例：20（管理費・修繕費等）" oninput="calcRimawari()">
+    </div>
+    <div class="result-grid" id="rimawari-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">表面利回り</span>
+        <span class="result-value big" id="r-hyomen">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">実質利回り</span>
+        <span class="result-value big green" id="r-jissitu">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">投資回収年数（実質）</span>
+        <span class="result-value" id="r-kaishu">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">月間家賃収入</span>
+        <span class="result-value" id="r-monthly">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🔄</span>購入価格の逆算</div>
+    <div class="field">
+      <label>年間家賃収入（万円）</label>
+      <input type="number" inputmode="decimal" id="inv-rent" placeholder="例：180" oninput="calcInverse()">
+    </div>
+    <div class="field">
+      <label>目標利回り（%）</label>
+      <input type="number" inputmode="decimal" id="inv-yield" placeholder="例：6" oninput="calcInverse()">
+    </div>
+    <div class="field">
+      <label>年間諸経費（万円）※実質利回りで逆算する場合</label>
+      <input type="number" inputmode="decimal" id="inv-cost" placeholder="例：20（任意）" oninput="calcInverse()">
+    </div>
+    <div class="result-grid" id="inverse-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">表面利回りで逆算した購入適正価格</span>
+        <span class="result-value big" id="inv-price-hyomen">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">実質利回りで逆算した購入適正価格</span>
+        <span class="result-value big green" id="inv-price-jissitu">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">月間家賃収入</span>
+        <span class="result-value" id="inv-monthly">—</span>
+      </div>
+    </div>
+    <p class="note">目標利回りを達成するための最大購入価格の目安です。</p>
+  </div>
+</div>
+
+<!-- タブ3：ローン -->
+
+<div id="tab-loan" class="tab-content">
+  <div class="card">
+    <div class="card-title"><span>🏦</span>ローンシミュレーション</div>
+    <div class="field">
+      <label>借入金額（万円）</label>
+      <input type="number" inputmode="decimal" id="l-amount" placeholder="例：2500" oninput="calcLoan()">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>金利（年率 %）</label>
+        <input type="number" inputmode="decimal" id="l-rate" placeholder="例：0.5" step="0.01" oninput="calcLoan()">
+      </div>
+      <div class="field">
+        <label>返済期間（年）</label>
+        <input type="number" inputmode="decimal" id="l-years" placeholder="例：35" oninput="calcLoan()">
+      </div>
+    </div>
+    <div class="result-grid" id="loan-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">月々返済額</span>
+        <span class="result-value big" id="l-monthly">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">総返済額</span>
+        <span class="result-value" id="l-total">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">総支払利息</span>
+        <span class="result-value" id="l-interest">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">年間返済額</span>
+        <span class="result-value" id="l-yearly">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="loan-balance-card" style="display:none">
+    <div class="card-title"><span>📊</span>年別残高推移</div>
+    <table>
+      <thead>
+        <tr><th>経過年数</th><th>返済済元本</th><th>残債</th><th>利息累計</th></tr>
+      </thead>
+      <tbody id="loan-balance-table"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- タブ4：諸費用 -->
+
+<div id="tab-shohi" class="tab-content">
+  <div class="card">
+    <div class="card-title"><span>📋</span>購入時諸費用概算</div>
+    <div class="field">
+      <label>物件価格（万円）</label>
+      <input type="number" inputmode="decimal" id="s-price" placeholder="例：3000" oninput="calcShohi()">
+    </div>
+    <div class="field">
+      <label>物件種別</label>
+      <select id="s-type" onchange="calcShohi()">
+        <option value="chuko">中古物件</option>
+        <option value="shinto">新築物件</option>
+        <option value="tochi">土地のみ</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>ローン利用</label>
+      <select id="s-loan" onchange="calcShohi()">
+        <option value="yes">あり</option>
+        <option value="no">なし（現金購入）</option>
+      </select>
+    </div>
+    <div id="shohi-result" style="display:none">
+      <hr class="divider">
+      <table>
+        <thead>
+          <tr><th>費用項目</th><th>概算金額</th></tr>
+        </thead>
+        <tbody id="shohi-table"></tbody>
+      </table>
+      <div class="result-item" style="margin-top:10px">
+        <span class="result-label">諸費用合計（概算）</span>
+        <span class="result-value big" id="s-total">—</span>
+      </div>
+      <p class="note">※概算のため実際の金額と異なる場合があります。税率・契約内容により変動します。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🤝</span>仲介手数料計算</div>
+    <div class="field">
+      <label>売買価格（万円）</label>
+      <input type="number" inputmode="decimal" id="c-price" placeholder="例：3000" oninput="calcChukaisho()">
+    </div>
+    <div class="result-grid" id="chukaisho-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">仲介手数料（税別）</span>
+        <span class="result-value big" id="c-fee">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">仲介手数料（税込）</span>
+        <span class="result-value" id="c-fee-tax">—</span>
+      </div>
+    </div>
+    <p class="note">宅建業法上限：(売買価格×3%+6万円)×1.1</p>
+  </div>
+</div>
+
+<!-- タブ5：耐用年数 -->
+
+<div id="tab-taiyo" class="tab-content">
+  <div class="card">
+    <div class="card-title"><span>🏗️</span>法定耐用年数</div>
+    <table>
+      <thead>
+        <tr><th>構造</th><th>法定耐用年数</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>木造・合成樹脂造</td><td>22年</td></tr>
+        <tr><td>木骨モルタル造</td><td>20年</td></tr>
+        <tr><td>軽量鉄骨（厚3mm以下）</td><td>19年</td></tr>
+        <tr><td>軽量鉄骨（厚3mm超4mm以下）</td><td>27年</td></tr>
+        <tr><td>重量鉄骨造（厚4mm超）</td><td>34年</td></tr>
+        <tr class="highlight"><td>RC造（鉄筋コンクリート）</td><td>47年</td></tr>
+        <tr class="highlight"><td>SRC造（鉄骨鉄筋コンクリート）</td><td>47年</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>📉</span>中古物件の残存耐用年数</div>
+    <div class="field">
+      <label>建物構造</label>
+      <select id="t-structure" onchange="calcTaiyo()">
+        <option value="22">木造（22年）</option>
+        <option value="20">木骨モルタル（20年）</option>
+        <option value="19">軽量鉄骨3mm以下（19年）</option>
+        <option value="27">軽量鉄骨3mm超（27年）</option>
+        <option value="34">重量鉄骨（34年）</option>
+        <option value="47">RC造・SRC造（47年）</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>竣工年月（建築された年月）</label>
+      <input type="month" id="t-built" onchange="calcTaiyo()" style="color-scheme:dark;">
+    </div>
+    <div class="field" style="display:none" id="t-age-display">
+      <label>築年数（自動計算）</label>
+      <input type="text" id="t-age-text" readonly style="background:var(--surface);color:var(--text2);">
+    </div>
+    <div class="field">
+      <label>建物価格（万円）※減価償却計算用</label>
+      <input type="number" inputmode="decimal" id="t-bldprice" placeholder="例：1500（任意）" oninput="calcTaiyo()">
+    </div>
+    <div class="result-grid" id="taiyo-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">残存耐用年数</span>
+        <span class="result-value big" id="t-remain">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">減価償却率（定額法）</span>
+        <span class="result-value" id="t-rate">—</span>
+      </div>
+      <div class="result-item" id="t-depr-row" style="display:none">
+        <span class="result-label">年間減価償却費（概算）</span>
+        <span class="result-value green" id="t-depr">—</span>
+      </div>
+    </div>
+    <p class="note">法定耐用年数を超えた物件：残存耐用年数 = 法定耐用年数 × 20%（最低2年）</p>
+  </div>
+</div>
+
+<script>
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const ids = ['tanka','rimawari','loan','shohi','taiyo'];
+    t.classList.toggle('active', ids[i] === id);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+function fmt(n) {
+  if (n >= 10000) return (n/10000).toFixed(2) + '億円';
+  if (n >= 1) return n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '万円';
+  return (n * 10000).toFixed(0) + '円';
+}
+
+function fmtMan(n) {
+  return Math.round(n).toLocaleString() + '万円';
+}
+
+// 平米坪変換
+function convertArea(from) {
+  const sqm = document.getElementById('sqm');
+  const tsubo = document.getElementById('tsubo');
+  if (from === 'sqm' && sqm.value) {
+    tsubo.value = (parseFloat(sqm.value) / 3.30579).toFixed(2);
+    document.getElementById('area_sqm').value = sqm.value;
+  } else if (from === 'tsubo' && tsubo.value) {
+    sqm.value = (parseFloat(tsubo.value) * 3.30579).toFixed(2);
+    document.getElementById('area_sqm').value = sqm.value;
+  }
+}
+
+// 単価計算
+function calcTanka() {
+  const price = parseFloat(document.getElementById('price').value);
+  const area = parseFloat(document.getElementById('area_sqm').value);
+  if (!price || !area) return;
+  const tsuboArea = area / 3.30579;
+  const sqmPrice = price / area;
+  const tsuboPrice = price / tsuboArea;
+  document.getElementById('r-sqm-price').textContent = sqmPrice.toFixed(2) + '万円/㎡';
+  document.getElementById('r-tsubo-price').textContent = tsuboPrice.toFixed(2) + '万円/坪';
+  document.getElementById('r-tsubo-area').textContent = tsuboArea.toFixed(2) + '坪';
+  document.getElementById('tanka-result').style.display = 'grid';
+}
+
+// 利回り
+function calcRimawari() {
+  const price = parseFloat(document.getElementById('r-price').value);
+  const rent = parseFloat(document.getElementById('r-rent').value);
+  const cost = parseFloat(document.getElementById('r-cost').value) || 0;
+  if (!price || !rent) return;
+  const hyomen = (rent / price * 100).toFixed(2);
+  const jissitu = ((rent - cost) / price * 100).toFixed(2);
+  const kaishu = (price / (rent - cost)).toFixed(1);
+  document.getElementById('r-hyomen').textContent = hyomen + '%';
+  document.getElementById('r-jissitu').textContent = jissitu + '%';
+  document.getElementById('r-kaishu').textContent = kaishu + '年';
+  document.getElementById('r-monthly').textContent = (rent / 12).toFixed(1) + '万円/月';
+  document.getElementById('rimawari-result').style.display = 'grid';
+}
+
+// ローン
+function calcLoan() {
+  const amount = parseFloat(document.getElementById('l-amount').value) * 10000;
+  const annualRate = parseFloat(document.getElementById('l-rate').value) / 100;
+  const rate = annualRate / 12;
+  const years = parseFloat(document.getElementById('l-years').value);
+  const months = years * 12;
+  if (!amount || !months) return;
+  let monthly;
+  if (rate === 0) {
+    monthly = amount / months;
+  } else {
+    monthly = amount * rate * Math.pow(1+rate, months) / (Math.pow(1+rate, months) - 1);
+  }
+  const total = monthly * months;
+  const interest = total - amount;
+  document.getElementById('l-monthly').textContent = Math.round(monthly).toLocaleString() + '円';
+  document.getElementById('l-total').textContent = (total/10000).toFixed(0) + '万円';
+  document.getElementById('l-interest').textContent = (interest/10000).toFixed(0) + '万円';
+  document.getElementById('l-yearly').textContent = (monthly*12/10000).toFixed(1) + '万円';
+  document.getElementById('loan-result').style.display = 'grid';
+
+  // 年別残高推移
+  const tbody = document.getElementById('loan-balance-table');
+  let balance = amount;
+  let totalInterest = 0;
+  let totalPrincipal = 0;
+  let rows = '';
+  const step = years <= 20 ? 1 : years <= 35 ? 5 : 5;
+  for (let y = 1; y <= years; y++) {
+    for (let m = 0; m < 12; m++) {
+      const iPayment = rate === 0 ? 0 : balance * rate;
+      const pPayment = monthly - iPayment;
+      totalInterest += iPayment;
+      totalPrincipal += pPayment;
+      balance -= pPayment;
+      if (balance < 0) balance = 0;
+    }
+    if (y % step === 0 || y === years) {
+      const highlight = y === years ? ' class="highlight"' : '';
+      rows += `<tr${highlight}>
+        <td>${y}年後</td>
+        <td>${(totalPrincipal/10000).toFixed(0)}万円</td>
+        <td>${Math.max(balance/10000,0).toFixed(0)}万円</td>
+        <td>${(totalInterest/10000).toFixed(0)}万円</td>
+      </tr>`;
+    }
+  }
+  tbody.innerHTML = rows;
+  document.getElementById('loan-balance-card').style.display = 'block';
+}
+
+// 諸費用
+function calcShohi() {
+  const price = parseFloat(document.getElementById('s-price').value);
+  const type = document.getElementById('s-type').value;
+  const loan = document.getElementById('s-loan').value;
+  if (!price) return;
+
+  const items = [];
+  let total = 0;
+
+  // 仲介手数料（新築・土地は不要なケースもあるが表示）
+  if (type !== 'shinto') {
+    const chukaisho = Math.round((price * 0.03 + 6) * 1.1 * 10) / 10;
+    items.push(['仲介手数料（上限・税込）', chukaisho]);
+    total += chukaisho;
+  }
+
+  // 印紙税（概算）
+  let inshi = 1;
+  if (price <= 500) inshi = 0.1;
+  else if (price <= 1000) inshi = 0.5;
+  else if (price <= 5000) inshi = 1;
+  else if (price <= 10000) inshi = 3;
+  items.push(['印紙税（概算）', inshi]);
+  total += inshi;
+
+  // 登録免許税
+  const tokki = type === 'shinto' ? Math.round(price * 0.004 * 10) / 10 : Math.round(price * 0.02 * 10) / 10;
+  items.push(['登録免許税（所有権移転）', tokki]);
+  total += tokki;
+
+  // 不動産取得税
+  const shutoku = Math.round(price * 0.03 * 10) / 10;
+  items.push(['不動産取得税（概算）', shutoku]);
+  total += shutoku;
+
+  // 司法書士費用
+  items.push(['司法書士報酬（目安）', 10]);
+  total += 10;
+
+  // ローン関連
+  if (loan === 'yes') {
+    items.push(['ローン事務手数料（目安）', 5]);
+    items.push(['火災保険料（目安）', 15]);
+    total += 20;
+  }
+
+  // 固定資産税精算
+  items.push(['固定資産税等精算（目安）', 5]);
+  total += 5;
+
+  const tbody = document.getElementById('shohi-table');
+  tbody.innerHTML = items.map(([label, val]) =>
+    `<tr><td>${label}</td><td>${val.toFixed(1)}万円</td></tr>`
+  ).join('');
+  document.getElementById('s-total').textContent = total.toFixed(1) + '万円';
+  document.getElementById('shohi-result').style.display = 'block';
+}
+
+// 仲介手数料
+function calcChukaisho() {
+  const price = parseFloat(document.getElementById('c-price').value);
+  if (!price) return;
+  const fee = price * 0.03 + 6;
+  const feeTax = fee * 1.1;
+  document.getElementById('c-fee').textContent = fee.toFixed(1) + '万円';
+  document.getElementById('c-fee-tax').textContent = feeTax.toFixed(1) + '万円';
+  document.getElementById('chukaisho-result').style.display = 'grid';
+}
+
+// 購入価格逆算
+function calcInverse() {
+  const rent = parseFloat(document.getElementById('inv-rent').value);
+  const yield_ = parseFloat(document.getElementById('inv-yield').value);
+  const cost = parseFloat(document.getElementById('inv-cost').value) || 0;
+  if (!rent || !yield_) return;
+  const priceHyomen = (rent / yield_ * 100).toFixed(0);
+  const priceJissitu = cost ? ((rent - cost) / yield_ * 100).toFixed(0) : null;
+  document.getElementById('inv-price-hyomen').textContent = parseFloat(priceHyomen).toLocaleString() + '万円';
+  document.getElementById('inv-price-jissitu').textContent = priceJissitu ? parseFloat(priceJissitu).toLocaleString() + '万円' : '経費を入力してください';
+  document.getElementById('inv-monthly').textContent = (rent / 12).toFixed(1) + '万円/月';
+  document.getElementById('inverse-result').style.display = 'grid';
+}
+
+// 耐用年数
+function calcTaiyo() {
+  const legal = parseFloat(document.getElementById('t-structure').value);
+  const builtVal = document.getElementById('t-built').value;
+  const bldprice = parseFloat(document.getElementById('t-bldprice').value);
+  if (!builtVal) return;
+
+  const builtDate = new Date(builtVal + '-01');
+  const now = new Date();
+  const diffMs = now - builtDate;
+  const age = diffMs / (1000 * 60 * 60 * 24 * 365.25);
+  const ageYears = Math.floor(age);
+  const ageMonths = Math.floor((age - ageYears) * 12);
+
+  document.getElementById('t-age-text').value = ageYears + '年' + ageMonths + 'ヶ月';
+  document.getElementById('t-age-display').style.display = 'block';
+
+  let remain;
+  if (age >= legal) {
+    remain = Math.max(Math.floor(legal * 0.2), 2);
+  } else {
+    remain = Math.max(Math.floor((legal - age) + age * 0.2), 2);
+  }
+
+  const rate = (1 / remain).toFixed(3);
+  document.getElementById('t-remain').textContent = remain + '年';
+  document.getElementById('t-rate').textContent = rate + '（' + (1/remain*100).toFixed(1) + '%）';
+
+  if (bldprice) {
+    const depr = (bldprice / remain).toFixed(1);
+    document.getElementById('t-depr').textContent = depr + '万円/年';
+    document.getElementById('t-depr-row').style.display = 'flex';
+  } else {
+    document.getElementById('t-depr-row').style.display = 'none';
+  }
+
+  document.getElementById('taiyo-result').style.display = 'grid';
+}
+</script>
+
+</body>
+</html>
