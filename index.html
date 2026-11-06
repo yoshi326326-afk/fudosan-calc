@@ -279,6 +279,9 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
   <button class="tab" onclick="switchTab('loan')">ローン</button>
   <button class="tab" onclick="switchTab('shohi')">諸費用</button>
   <button class="tab" onclick="switchTab('taiyo')">耐用年数</button>
+  <button class="tab" onclick="switchTab('tenbai')">転売</button>
+  <button class="tab" onclick="switchTab('cf')">収支・売却</button>
+  <button class="tab" onclick="switchTab('sekisan')">積算</button>
 </div>
 
 <!-- タブ1：単価・変換 -->
@@ -569,10 +572,419 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
   </div>
 </div>
 
+<!-- タブ6：転売 -->
+
+<div id="tab-tenbai" class="tab-content">
+  <div class="card">
+    <div class="card-title"><span>🏗️</span>仕入れ</div>
+    <div class="row2">
+      <div class="field">
+        <label>仕入価格（万円）</label>
+        <input type="number" inputmode="decimal" id="tb-buy" placeholder="例：3000" oninput="calcTenbai()">
+      </div>
+      <div class="field">
+        <label>仕入の仲介手数料</label>
+        <select id="tb-buy-fee" onchange="calcTenbai()">
+          <option value="yes">あり（上限）</option>
+          <option value="no">なし（直接仕入）</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>土地の評価額（万円）</label>
+        <input type="number" inputmode="decimal" id="tb-land-eval" placeholder="固都税評価額" oninput="calcTenbai()">
+      </div>
+      <div class="field">
+        <label>建物の評価額（万円）</label>
+        <input type="number" inputmode="decimal" id="tb-bld-eval" placeholder="固都税評価額" oninput="calcTenbai()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>建物の用途</label>
+        <select id="tb-use" onchange="calcTenbai()">
+          <option value="3">住宅（取得税3%）</option>
+          <option value="4">住宅以外（取得税4%）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>土地の登録免許税（%）</label>
+        <input type="number" inputmode="decimal" id="tb-land-reg" value="1.5" step="0.1" oninput="calcTenbai()">
+      </div>
+    </div>
+    <div class="field">
+      <label>司法書士・印紙など仕入時の経費（万円）</label>
+      <input type="number" inputmode="decimal" id="tb-buy-other" placeholder="例：20" oninput="calcTenbai()">
+    </div>
+    <div class="note">登録免許税＝土地評価額×1.5%（令和11年3月末までの軽減）＋建物評価額×2%。不動産取得税＝土地評価額×1/2×3%＋建物評価額×用途の税率。買取再販の減額特例は入れていないので、使える場合は税額が下がる。</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🔧</span>保有・リフォーム</div>
+    <div class="row2">
+      <div class="field">
+        <label>リフォーム費用（万円）</label>
+        <input type="number" inputmode="decimal" id="tb-reform" placeholder="例：300" oninput="calcTenbai()">
+      </div>
+      <div class="field">
+        <label>保有期間（ヶ月）</label>
+        <input type="number" inputmode="decimal" id="tb-months" value="6" oninput="calcTenbai()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>融資割合（仕入価格の%）</label>
+        <input type="number" inputmode="decimal" id="tb-ltv" placeholder="例：90" oninput="calcTenbai()">
+      </div>
+      <div class="field">
+        <label>金利（年率 %）</label>
+        <input type="number" inputmode="decimal" id="tb-rate" placeholder="例：2.5" step="0.01" oninput="calcTenbai()">
+      </div>
+    </div>
+    <div class="field">
+      <label>保有中の経費（固都税・管理費など／万円）</label>
+      <input type="number" inputmode="decimal" id="tb-hold" placeholder="例：15" oninput="calcTenbai()">
+    </div>
+    <div class="note">金利は保有期間中の利息だけで計算する（元本は売却時に一括返済する想定）。</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🏷️</span>販売</div>
+    <div class="row2">
+      <div class="field">
+        <label>販売価格・税込（万円）</label>
+        <input type="number" inputmode="decimal" id="tb-sell" placeholder="例：4200" oninput="calcTenbai()">
+      </div>
+      <div class="field">
+        <label>うち建物・税込（万円）</label>
+        <input type="number" inputmode="decimal" id="tb-sell-bld" placeholder="例：1100" oninput="calcTenbai()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>販売の仲介手数料</label>
+        <select id="tb-sell-fee" onchange="calcTenbai()">
+          <option value="yes">あり（上限）</option>
+          <option value="no">なし（自社販売）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>控除できる仕入の消費税（万円）</label>
+        <input type="number" inputmode="decimal" id="tb-input-tax" placeholder="0" oninput="calcTenbai()">
+      </div>
+    </div>
+    <div class="field">
+      <label>販売時のその他経費（広告・印紙など／万円）</label>
+      <input type="number" inputmode="decimal" id="tb-sell-other" placeholder="例：10" oninput="calcTenbai()">
+    </div>
+    <div class="note">消費税の納税額＝建物部分（税込）×10/110−控除できる仕入の消費税。個人から仕入れた場合、仕入に消費税はかからない。居住用の賃貸物件は仕入の消費税を控除できない場合があるから、税理士に確認すること。</div>
+
+    <div class="result-grid" id="tb-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">粗利（税引前）</span>
+        <span class="result-value big" id="tb-profit">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">利益率（対販売価格・税抜）</span>
+        <span class="result-value big green" id="tb-margin">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">自己資金</span>
+        <span class="result-value" id="tb-equity">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">自己資金に対する利益率（年換算）</span>
+        <span class="result-value" id="tb-roe">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="tb-detail-card" style="display:none">
+    <div class="card-title"><span>🧾</span>費用の内訳</div>
+    <table>
+      <thead><tr><th>項目</th><th>金額</th></tr></thead>
+      <tbody id="tb-table"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🔄</span>仕入上限の逆算</div>
+    <div class="field">
+      <label>目標の利益率（対販売価格・税抜 %）</label>
+      <input type="number" inputmode="decimal" id="tb-target" placeholder="例：15" oninput="calcTenbai()">
+    </div>
+    <div class="result-grid" id="tb-inv-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">この価格までなら仕入れられる</span>
+        <span class="result-value big" id="tb-max-buy">—</span>
+      </div>
+    </div>
+    <div class="note">販売価格と、仕入価格以外の入力（評価額・リフォーム・融資割合など）はそのままにして計算する。</div>
+  </div>
+</div>
+
+<!-- タブ7：収支・売却 -->
+
+<div id="tab-cf" class="tab-content">
+  <div class="card">
+    <div class="card-title"><span>🏢</span>購入と融資</div>
+    <div class="row2">
+      <div class="field">
+        <label>物件価格（万円）</label>
+        <input type="number" inputmode="decimal" id="cf-price" placeholder="例：5000" oninput="calcCF()">
+      </div>
+      <div class="field">
+        <label>購入諸費用（万円）</label>
+        <input type="number" inputmode="decimal" id="cf-cost" placeholder="例：350" oninput="calcCF()">
+      </div>
+    </div>
+    <div class="field">
+      <label>借入金額（万円）</label>
+      <input type="number" inputmode="decimal" id="cf-loan" placeholder="例：4500" oninput="calcCF()">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>金利（年率 %）</label>
+        <input type="number" inputmode="decimal" id="cf-rate" placeholder="例：2.0" step="0.01" oninput="calcCF()">
+      </div>
+      <div class="field">
+        <label>返済期間（年）</label>
+        <input type="number" inputmode="decimal" id="cf-years" placeholder="例：30" oninput="calcCF()">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>💰</span>収入と経費</div>
+    <div class="field">
+      <label>満室時の年間家賃（万円）</label>
+      <input type="number" inputmode="decimal" id="cf-gpi" placeholder="例：400" oninput="calcCF()">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>空室・滞納率（%）</label>
+        <input type="number" inputmode="decimal" id="cf-vac" value="5" oninput="calcCF()">
+      </div>
+      <div class="field">
+        <label>運営経費率（%）</label>
+        <input type="number" inputmode="decimal" id="cf-opex" value="20" oninput="calcCF()">
+      </div>
+    </div>
+    <div class="field">
+      <label>家賃の下落率（年 %）</label>
+      <input type="number" inputmode="decimal" id="cf-decline" value="1" step="0.1" oninput="calcCF()">
+    </div>
+    <div class="note">運営経費率は、空室分を引いたあとの家賃に対する割合（管理費・修繕・固都税・保険など）。一般的には15〜25%が目安。</div>
+
+    <div class="result-grid" id="cf-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">1年目の手残り（税引前）</span>
+        <span class="result-value big green" id="cf-btcf">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">1年目の営業利益（NOI）</span>
+        <span class="result-value" id="cf-noi">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">年間返済額</span>
+        <span class="result-value" id="cf-ads">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">返済余裕率（NOI÷返済額）</span>
+        <span class="result-value" id="cf-dscr">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">総収益率（NOI÷総投資額）</span>
+        <span class="result-value" id="cf-fcr">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">ローン定数（返済額÷借入額）</span>
+        <span class="result-value" id="cf-k">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">レバレッジの判定</span>
+        <span class="result-value" id="cf-lev">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">自己資金の利回り（手残り÷自己資金）</span>
+        <span class="result-value" id="cf-ccr">—</span>
+      </div>
+    </div>
+    <div class="note">返済余裕率は1.3倍以上が金融機関の目安になることが多い。総収益率がローン定数を下回ると、借入が多いほど自己資金の利回りが下がる（逆レバレッジ）。</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🚪</span>売却（出口）</div>
+    <div class="row2">
+      <div class="field">
+        <label>保有年数（年）</label>
+        <input type="number" inputmode="decimal" id="cf-hold" value="10" oninput="calcCF()">
+      </div>
+      <div class="field">
+        <label>売却時の表面利回り（%）</label>
+        <input type="number" inputmode="decimal" id="cf-exit-cap" placeholder="例：8.5" step="0.1" oninput="calcCF()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>購入価格のうち建物（万円）</label>
+        <input type="number" inputmode="decimal" id="cf-bld" placeholder="例：2000" oninput="calcCF()">
+      </div>
+      <div class="field">
+        <label>償却年数（年）</label>
+        <input type="number" inputmode="decimal" id="cf-life" placeholder="耐用年数タブで計算" oninput="calcCF()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>売主</label>
+        <select id="cf-owner" onchange="calcCF()">
+          <option value="individual">個人</option>
+          <option value="corp">法人</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>法人の実効税率（%）</label>
+        <input type="number" inputmode="decimal" id="cf-corp-tax" value="34" oninput="calcCF()">
+      </div>
+    </div>
+    <div class="note">売却価格＝売却する年の満室家賃÷売却時の表面利回り。個人の譲渡税は、保有6年以上を長期（20.315%）、5年以下を短期（39.63%）として計算する（正確には売却した年の1月1日時点で5年を超えているかで決まる）。取得費は購入価格＋購入諸費用−減価償却の累計で概算している。</div>
+
+    <div class="result-grid" id="cf-exit-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">売却価格</span>
+        <span class="result-value big" id="cf-sale">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">売却費用（仲介手数料など）</span>
+        <span class="result-value" id="cf-sale-cost">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">売却時のローン残債</span>
+        <span class="result-value" id="cf-sale-bal">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label" id="cf-tax-label">譲渡税</span>
+        <span class="result-value" id="cf-sale-tax">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">売却での手残り</span>
+        <span class="result-value" id="cf-sale-net">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">保有中の手残りの合計</span>
+        <span class="result-value" id="cf-sum-cf">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">投資全体の利益（自己資金を差し引いた額）</span>
+        <span class="result-value big green" id="cf-total">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">自己資金の年利回り（IRR）</span>
+        <span class="result-value big" id="cf-irr">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="cf-table-card" style="display:none">
+    <div class="card-title"><span>📊</span>年別の収支</div>
+    <table>
+      <thead><tr><th>年</th><th>NOI</th><th>手残り</th><th>累計</th><th>残債</th></tr></thead>
+      <tbody id="cf-table"></tbody>
+    </table>
+    <div class="note">保有中の所得税・法人税は入れていない（ほかの収入と合わせて決まるため）。</div>
+  </div>
+</div>
+
+<!-- タブ8：積算評価 -->
+
+<div id="tab-sekisan" class="tab-content">
+  <div class="card">
+    <div class="card-title"><span>🗺️</span>土地</div>
+    <div class="row2">
+      <div class="field">
+        <label>土地面積（㎡）</label>
+        <input type="number" inputmode="decimal" id="sk-land" placeholder="例：150" oninput="calcSekisan()">
+      </div>
+      <div class="field">
+        <label>路線価（千円/㎡）</label>
+        <input type="number" inputmode="decimal" id="sk-rosen" placeholder="例：420" oninput="calcSekisan()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>補正率（%）</label>
+        <input type="number" inputmode="decimal" id="sk-adj" value="100" oninput="calcSekisan()">
+      </div>
+      <div class="field">
+        <label>持分（%）</label>
+        <input type="number" inputmode="decimal" id="sk-share" value="100" oninput="calcSekisan()">
+      </div>
+    </div>
+    <div class="note">路線価は国税庁の路線価図の数字（千円/㎡）。補正率には、形が悪い・間口が狭いなどの減額を入れる。区分マンションの場合は、敷地権の割合を持分に入れる。</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🏢</span>建物</div>
+    <div class="row2">
+      <div class="field">
+        <label>構造</label>
+        <select id="sk-structure" onchange="setSekisanUnit(); calcSekisan()">
+          <option value="47" data-unit="20">RC造・SRC造（47年）</option>
+          <option value="34" data-unit="18">重量鉄骨（34年）</option>
+          <option value="27" data-unit="15">軽量鉄骨3mm超（27年）</option>
+          <option value="19" data-unit="15">軽量鉄骨3mm以下（19年）</option>
+          <option value="22" data-unit="15">木造（22年）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>再調達価格（万円/㎡）</label>
+        <input type="number" inputmode="decimal" id="sk-unit" value="20" step="0.5" oninput="calcSekisan()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>延床面積（㎡）</label>
+        <input type="number" inputmode="decimal" id="sk-floor" placeholder="例：300" oninput="calcSekisan()">
+      </div>
+      <div class="field">
+        <label>築年数（年）</label>
+        <input type="number" inputmode="decimal" id="sk-age" placeholder="例：15" oninput="calcSekisan()">
+      </div>
+    </div>
+    <div class="field">
+      <label>物件価格（万円）※比較用</label>
+      <input type="number" inputmode="decimal" id="sk-price" placeholder="例：8000" oninput="calcSekisan()">
+    </div>
+    <div class="note">再調達価格は一般的な目安（RC・SRC 20万円、重量鉄骨 18万円、軽量鉄骨・木造 15万円/㎡）。金融機関によって違うので、必要なら書き換える。耐用年数を過ぎた建物は0円で計算する。</div>
+
+    <div class="result-grid" id="sk-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">積算評価（合計）</span>
+        <span class="result-value big" id="sk-total">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">土地</span>
+        <span class="result-value" id="sk-land-val">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">建物</span>
+        <span class="result-value" id="sk-bld-val">—</span>
+      </div>
+      <div class="result-item" id="sk-ratio-row">
+        <span class="result-label">積算÷物件価格</span>
+        <span class="result-value big green" id="sk-ratio">—</span>
+      </div>
+    </div>
+    <div class="note">路線価は時価の8割程度が目安なので、金融機関によっては土地を割り戻して評価することもある。この数字は担保評価の目安で、実際の融資額を保証するものではない。</div>
+  </div>
+</div>
+
 <script>
 function switchTab(id) {
   document.querySelectorAll('.tab').forEach((t,i) => {
-    const ids = ['tanka','rimawari','loan','shohi','taiyo'];
+    const ids = ['tanka','rimawari','loan','shohi','taiyo','tenbai','cf','sekisan'];
     t.classList.toggle('active', ids[i] === id);
   });
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -805,6 +1217,272 @@ function calcTaiyo() {
   }
 
   document.getElementById('taiyo-result').style.display = 'grid';
+}
+
+// ===== 売買の共通部品 =====
+function num(id) {
+  const v = parseFloat(document.getElementById(id).value);
+  return isNaN(v) ? 0 : v;
+}
+
+function man(v) {
+  return v.toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '万円';
+}
+
+function pct(v, digits = 2) {
+  return (v * 100).toFixed(digits) + '%';
+}
+
+// 仲介手数料の上限（税込・万円）。価格は税抜の万円。
+function chukaiFee(p) {
+  if (p <= 0) return 0;
+  let fee;
+  if (p <= 200) fee = p * 0.05;
+  else if (p <= 400) fee = p * 0.04 + 2;
+  else fee = p * 0.03 + 6;
+  return fee * 1.1;
+}
+
+// ===== 転売の利益計算 =====
+function tenbaiProfit(buy) {
+  const landEval = num('tb-land-eval');
+  const bldEval = num('tb-bld-eval');
+  const months = num('tb-months');
+  const sell = num('tb-sell');
+  const sellBld = Math.min(num('tb-sell-bld'), sell);
+
+  const items = [];
+  const buyFee = document.getElementById('tb-buy-fee').value === 'yes' ? chukaiFee(buy) : 0;
+  if (buyFee) items.push(['仕入の仲介手数料', buyFee]);
+
+  const reg = landEval * num('tb-land-reg') / 100 + bldEval * 0.02;
+  if (reg) items.push(['登録免許税', reg]);
+
+  const acq = landEval * 0.5 * 0.03 + bldEval * parseFloat(document.getElementById('tb-use').value) / 100;
+  if (acq) items.push(['不動産取得税', acq]);
+
+  const buyOther = num('tb-buy-other');
+  if (buyOther) items.push(['仕入時の経費', buyOther]);
+
+  const reform = num('tb-reform');
+  if (reform) items.push(['リフォーム費用', reform]);
+
+  const loan = buy * num('tb-ltv') / 100;
+  const interest = loan * num('tb-rate') / 100 * months / 12;
+  if (interest) items.push(['保有中の金利', interest]);
+
+  const hold = num('tb-hold');
+  if (hold) items.push(['保有中の経費', hold]);
+
+  const outputTax = sellBld * 10 / 110;
+  const salesExTax = sell - outputTax;
+  const sellFee = document.getElementById('tb-sell-fee').value === 'yes' ? chukaiFee(salesExTax) : 0;
+  if (sellFee) items.push(['販売の仲介手数料', sellFee]);
+
+  const sellOther = num('tb-sell-other');
+  if (sellOther) items.push(['販売時の経費', sellOther]);
+
+  const taxPay = Math.max(outputTax - num('tb-input-tax'), 0);
+  if (taxPay) items.push(['消費税の納税額', taxPay]);
+
+  const cost = items.reduce((s, [, v]) => s + v, 0);
+  const profit = sell - buy - cost;
+  // 売却までに出ていくお金から借入を引いたもの
+  const equity = buy + buyFee + reg + acq + buyOther + reform + interest + hold - loan;
+  return { items, profit, salesExTax, equity, months };
+}
+
+function calcTenbai() {
+  const buy = num('tb-buy');
+  const sell = num('tb-sell');
+  if (!buy || !sell) return;
+
+  const r = tenbaiProfit(buy);
+  document.getElementById('tb-profit').textContent = man(r.profit);
+  document.getElementById('tb-margin').textContent = r.salesExTax > 0 ? pct(r.profit / r.salesExTax, 1) : '—';
+  document.getElementById('tb-equity').textContent = man(r.equity);
+  if (r.equity > 0 && r.months > 0) {
+    document.getElementById('tb-roe').textContent =
+      pct(r.profit / r.equity, 1) + '（年 ' + pct(r.profit / r.equity * 12 / r.months, 1) + '）';
+  } else {
+    document.getElementById('tb-roe').textContent = '—';
+  }
+  document.getElementById('tb-result').style.display = 'grid';
+
+  const total = r.items.reduce((s, [, v]) => s + v, 0);
+  document.getElementById('tb-table').innerHTML =
+    `<tr><td>仕入価格</td><td>${man(buy)}</td></tr>` +
+    r.items.map(([label, v]) => `<tr><td>${label}</td><td>${man(v)}</td></tr>`).join('') +
+    `<tr class="highlight"><td>費用の合計（仕入価格を除く）</td><td>${man(total)}</td></tr>`;
+  document.getElementById('tb-detail-card').style.display = 'block';
+
+  // 仕入上限の逆算（仕入価格が高いほど利益は減るので二分探索）
+  const target = num('tb-target') / 100;
+  const invBox = document.getElementById('tb-inv-result');
+  if (!document.getElementById('tb-target').value) { invBox.style.display = 'none'; return; }
+  const goal = r.salesExTax * target;
+  let lo = 0, hi = sell;
+  if (tenbaiProfit(0).profit < goal) {
+    document.getElementById('tb-max-buy').textContent = 'この条件では届かない';
+  } else {
+    for (let i = 0; i < 60; i++) {
+      const mid = (lo + hi) / 2;
+      if (tenbaiProfit(mid).profit >= goal) lo = mid; else hi = mid;
+    }
+    document.getElementById('tb-max-buy').textContent = man(Math.floor(lo * 10) / 10);
+  }
+  invBox.style.display = 'grid';
+}
+
+// ===== 収支と売却シミュレーション =====
+function irr(flows) {
+  const npv = r => flows.reduce((s, f, t) => s + f / Math.pow(1 + r, t), 0);
+  let lo = -0.99, hi = 1;
+  if (npv(lo) * npv(hi) > 0) return null;
+  for (let i = 0; i < 200; i++) {
+    const mid = (lo + hi) / 2;
+    if (npv(lo) * npv(mid) <= 0) hi = mid; else lo = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+function calcCF() {
+  const price = num('cf-price');
+  const cost = num('cf-cost');
+  const loan = num('cf-loan');
+  const rate = num('cf-rate') / 100 / 12;
+  const months = num('cf-years') * 12;
+  const gpi = num('cf-gpi');
+  if (!price || !gpi) return;
+
+  const vac = num('cf-vac') / 100;
+  const opex = num('cf-opex') / 100;
+  const decline = num('cf-decline') / 100;
+  const hold = Math.max(Math.round(num('cf-hold')), 1);
+  const equity = price + cost - loan;
+
+  let monthly = 0;
+  if (loan > 0 && months > 0) {
+    monthly = rate === 0 ? loan / months : loan * rate * Math.pow(1 + rate, months) / (Math.pow(1 + rate, months) - 1);
+  }
+
+  let balance = loan;
+  let paidMonths = 0;
+  let sumCF = 0;
+  const flows = [-equity];
+  let rows = '';
+  let year1 = null;
+
+  for (let y = 1; y <= hold; y++) {
+    const rent = gpi * Math.pow(1 - decline, y - 1);
+    const egi = rent * (1 - vac);
+    const noi = egi * (1 - opex);
+    let ads = 0;
+    for (let m = 0; m < 12 && paidMonths < months && balance > 0; m++) {
+      const i = balance * rate;
+      const p = Math.min(monthly - i, balance);
+      balance -= p;
+      ads += i + p;
+      paidMonths++;
+    }
+    const btcf = noi - ads;
+    sumCF += btcf;
+    flows.push(btcf);
+    if (y === 1) year1 = { noi, ads, btcf };
+    rows += `<tr${y === hold ? ' class="highlight"' : ''}><td>${y}</td><td>${noi.toFixed(0)}</td><td>${btcf.toFixed(0)}</td><td>${sumCF.toFixed(0)}</td><td>${Math.max(balance, 0).toFixed(0)}</td></tr>`;
+  }
+
+  document.getElementById('cf-noi').textContent = man(year1.noi);
+  document.getElementById('cf-ads').textContent = man(year1.ads);
+  document.getElementById('cf-btcf').textContent = man(year1.btcf) + '（月 ' + man(year1.btcf / 12) + '）';
+  document.getElementById('cf-dscr').textContent = year1.ads > 0 ? (year1.noi / year1.ads).toFixed(2) + '倍' : '借入なし';
+  const fcr = year1.noi / (price + cost);
+  document.getElementById('cf-fcr').textContent = pct(fcr);
+  if (loan > 0 && year1.ads > 0) {
+    const k = year1.ads / loan;
+    document.getElementById('cf-k').textContent = pct(k);
+    document.getElementById('cf-lev').textContent = fcr > k
+      ? '効いている（+' + ((fcr - k) * 100).toFixed(2) + 'pt）'
+      : '逆レバレッジ（' + ((fcr - k) * 100).toFixed(2) + 'pt）';
+  } else {
+    document.getElementById('cf-k').textContent = '—';
+    document.getElementById('cf-lev').textContent = '—';
+  }
+  document.getElementById('cf-ccr').textContent = equity > 0 ? pct(year1.btcf / equity) : '—';
+  document.getElementById('cf-result').style.display = 'grid';
+  document.getElementById('cf-table').innerHTML = rows;
+  document.getElementById('cf-table-card').style.display = 'block';
+
+  // 売却
+  const exitCap = num('cf-exit-cap') / 100;
+  const exitBox = document.getElementById('cf-exit-result');
+  if (!exitCap) { exitBox.style.display = 'none'; return; }
+
+  const sale = gpi * Math.pow(1 - decline, hold) / exitCap;
+  const saleCost = chukaiFee(sale);
+  const bld = num('cf-bld');
+  const life = num('cf-life');
+  const depr = bld > 0 && life > 0 ? Math.min(bld, bld / life * hold) : 0;
+  const basis = price + cost - depr;
+  const gain = Math.max(sale - saleCost - basis, 0);
+
+  let taxRate, taxLabel;
+  if (document.getElementById('cf-owner').value === 'corp') {
+    taxRate = num('cf-corp-tax') / 100;
+    taxLabel = '売却益への法人税（概算）';
+  } else if (hold >= 6) {
+    taxRate = 0.20315;
+    taxLabel = '譲渡税（長期 20.315%）';
+  } else {
+    taxRate = 0.3963;
+    taxLabel = '譲渡税（短期 39.63%）';
+  }
+  const tax = gain * taxRate;
+  const bal = Math.max(balance, 0);
+  const saleNet = sale - saleCost - bal - tax;
+  flows[flows.length - 1] += saleNet;
+  const total = sumCF + saleNet - equity;
+  const r = irr(flows);
+
+  document.getElementById('cf-sale').textContent = man(sale);
+  document.getElementById('cf-sale-cost').textContent = man(saleCost);
+  document.getElementById('cf-sale-bal').textContent = man(bal);
+  document.getElementById('cf-tax-label').textContent = taxLabel;
+  document.getElementById('cf-sale-tax').textContent = man(tax);
+  document.getElementById('cf-sale-net').textContent = man(saleNet);
+  document.getElementById('cf-sum-cf').textContent = man(sumCF);
+  document.getElementById('cf-total').textContent = man(total);
+  document.getElementById('cf-irr').textContent = equity <= 0 ? '自己資金ゼロのため計算不可' : (r === null ? '—' : pct(r));
+  exitBox.style.display = 'grid';
+}
+
+// ===== 積算評価 =====
+function setSekisanUnit() {
+  const opt = document.getElementById('sk-structure').selectedOptions[0];
+  document.getElementById('sk-unit').value = opt.dataset.unit;
+}
+
+function calcSekisan() {
+  const land = num('sk-land');
+  const rosen = num('sk-rosen');
+  const floor = num('sk-floor');
+  if (!(land && rosen) && !floor) return;
+
+  // 路線価（千円/㎡）×面積 ÷10 で万円
+  const landVal = land * rosen / 10 * num('sk-adj') / 100 * num('sk-share') / 100;
+  const life = parseFloat(document.getElementById('sk-structure').value);
+  const age = num('sk-age');
+  const remain = Math.max(life - age, 0);
+  const bldVal = floor * num('sk-unit') * remain / life;
+  const total = landVal + bldVal;
+
+  document.getElementById('sk-land-val').textContent = man(landVal);
+  document.getElementById('sk-bld-val').textContent = man(bldVal) + '（残り' + remain + '年／' + life + '年）';
+  document.getElementById('sk-total').textContent = man(total);
+  const price = num('sk-price');
+  document.getElementById('sk-ratio-row').style.display = price ? 'flex' : 'none';
+  if (price) document.getElementById('sk-ratio').textContent = pct(total / price, 1);
+  document.getElementById('sk-result').style.display = 'grid';
 }
 </script>
 
