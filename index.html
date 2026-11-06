@@ -466,12 +466,28 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
       </select>
     </div>
     <div class="field">
-      <label>ローン利用</label>
-      <select id="s-loan" onchange="calcShohi()">
-        <option value="yes">あり</option>
-        <option value="no">なし（現金購入）</option>
+      <label>用途</label>
+      <select id="s-use" onchange="calcShohi()">
+        <option value="invest">投資用（住宅）</option>
+        <option value="self">自己居住用（住宅の軽減あり）</option>
+        <option value="biz">事業用（住宅以外）</option>
       </select>
     </div>
+    <div class="row2">
+      <div class="field">
+        <label>土地の評価額（万円）</label>
+        <input type="number" inputmode="decimal" id="s-land-eval" placeholder="固都税評価額" oninput="calcShohi()">
+      </div>
+      <div class="field">
+        <label>建物の評価額（万円）</label>
+        <input type="number" inputmode="decimal" id="s-bld-eval" placeholder="固都税評価額" oninput="calcShohi()">
+      </div>
+    </div>
+    <div class="field">
+      <label>借入金額（万円）※現金購入なら空欄</label>
+      <input type="number" inputmode="decimal" id="s-loan" placeholder="例：2700" oninput="calcShohi()">
+    </div>
+    <div class="note">登録免許税と不動産取得税は、物件価格ではなく固定資産税評価額にかかる。評価額が空欄のときは、物件価格の7割を評価額とみなし、土地と建物を半分ずつにして仮計算する（土地のみなら全部土地）。</div>
     <div id="shohi-result" style="display:none">
       <hr class="divider">
       <table>
@@ -484,7 +500,7 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
         <span class="result-label">諸費用合計（概算）</span>
         <span class="result-value big" id="s-total">—</span>
       </div>
-      <p class="note">※概算のため実際の金額と異なる場合があります。税率・契約内容により変動します。</p>
+      <p class="note">※概算。登録免許税：土地の移転1.5%（令和11年3月末まで）、建物の移転2%・新築の保存0.4%・抵当権0.4%。自己居住用の住宅は、条件を満たせば建物の移転0.3%・保存0.15%・抵当権0.1%。不動産取得税：土地は評価額の1/2に3%、建物は住宅3%・住宅以外4%。新築住宅の1,200万円控除などの住宅向けの控除は入れていないので、該当すると取得税はさらに下がる。印紙税は令和9年3月末までの軽減税率。</p>
     </div>
   </div>
 
@@ -504,7 +520,7 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
         <span class="result-value" id="c-fee-tax">—</span>
       </div>
     </div>
-    <p class="note">宅建業法上限：(売買価格×3%+6万円)×1.1</p>
+    <p class="note">宅建業法の上限（税抜）：200万円以下の部分5%、200万円超400万円以下の部分4%、400万円超の部分3%。400万円超なら「価格×3%+6万円」と同じ。800万円以下の空き家等は、事前に合意すれば30万円（税込33万円）まで受け取れる特例がある。</p>
   </div>
 </div>
 
@@ -568,7 +584,7 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
         <span class="result-value green" id="t-depr">—</span>
       </div>
     </div>
-    <p class="note">法定耐用年数を超えた物件：残存耐用年数 = 法定耐用年数 × 20%（最低2年）</p>
+    <p class="note">中古の耐用年数（簡便法）：法定耐用年数を超えた物件は「法定耐用年数×20%」、超えていない物件は「（法定耐用年数−経過年数）＋経過年数×20%」。1年未満は切り捨て、最低2年。経過年数は今日買った場合で計算している。表の年数は住宅用で、事務所・店舗などは年数が違う（例：RC造の事務所50年、店舗39年）。</p>
   </div>
 </div>
 
@@ -1008,9 +1024,11 @@ function convertArea(from) {
   if (from === 'sqm' && sqm.value) {
     tsubo.value = (parseFloat(sqm.value) / 3.30579).toFixed(2);
     document.getElementById('area_sqm').value = sqm.value;
+    calcTanka();
   } else if (from === 'tsubo' && tsubo.value) {
     sqm.value = (parseFloat(tsubo.value) * 3.30579).toFixed(2);
     document.getElementById('area_sqm').value = sqm.value;
+    calcTanka();
   }
 }
 
@@ -1036,10 +1054,10 @@ function calcRimawari() {
   if (!price || !rent) return;
   const hyomen = (rent / price * 100).toFixed(2);
   const jissitu = ((rent - cost) / price * 100).toFixed(2);
-  const kaishu = (price / (rent - cost)).toFixed(1);
+  const kaishu = rent > cost ? (price / (rent - cost)).toFixed(1) : null;
   document.getElementById('r-hyomen').textContent = hyomen + '%';
   document.getElementById('r-jissitu').textContent = jissitu + '%';
-  document.getElementById('r-kaishu').textContent = kaishu + '年';
+  document.getElementById('r-kaishu').textContent = kaishu ? kaishu + '年' : '回収できない';
   document.getElementById('r-monthly').textContent = (rent / 12).toFixed(1) + '万円/月';
   document.getElementById('rimawari-result').style.display = 'grid';
 }
@@ -1097,70 +1115,80 @@ function calcLoan() {
 }
 
 // 諸費用
+function stampTax(p) {
+  // 不動産売買契約書の印紙税（軽減税率・令和9年3月末まで）。p は万円、戻り値も万円
+  if (p <= 0.1) return p >= 0.01 ? 0.02 : 0;
+  const table = [[50,0.02],[100,0.05],[500,0.1],[1000,0.5],[5000,1],[10000,3],[50000,6],[100000,16],[500000,32]];
+  for (const [limit, tax] of table) if (p <= limit) return tax;
+  return 48;
+}
+
 function calcShohi() {
   const price = parseFloat(document.getElementById('s-price').value);
   const type = document.getElementById('s-type').value;
-  const loan = document.getElementById('s-loan').value;
+  const use = document.getElementById('s-use').value;
+  const loan = parseFloat(document.getElementById('s-loan').value) || 0;
   if (!price) return;
 
+  // 評価額（空欄なら物件価格の7割で仮置き）
+  let landEval = parseFloat(document.getElementById('s-land-eval').value);
+  let bldEval = parseFloat(document.getElementById('s-bld-eval').value);
+  let guessed = false;
+  if (isNaN(landEval) && isNaN(bldEval)) {
+    guessed = true;
+    const total = price * 0.7;
+    landEval = type === 'tochi' ? total : total / 2;
+    bldEval = type === 'tochi' ? 0 : total / 2;
+  }
+  landEval = landEval || 0;
+  bldEval = type === 'tochi' ? 0 : (bldEval || 0);
+  const self = use === 'self';
+  const mark = guessed ? '（仮）' : '';
+
   const items = [];
-  let total = 0;
+  if (type !== 'shinto') items.push(['仲介手数料（上限・税込）', chukaiFee(price)]);
+  items.push(['印紙税（売買契約書）', stampTax(price)]);
+  if (loan > 0) items.push(['印紙税（金銭消費貸借契約書）', stampLoan(loan)]);
 
-  // 仲介手数料（新築・土地は不要なケースもあるが表示）
-  if (type !== 'shinto') {
-    const chukaisho = Math.round((price * 0.03 + 6) * 1.1 * 10) / 10;
-    items.push(['仲介手数料（上限・税込）', chukaisho]);
-    total += chukaisho;
+  items.push(['登録免許税（土地の移転）' + mark, landEval * 0.015]);
+  if (bldEval > 0) {
+    if (type === 'shinto') items.push(['登録免許税（建物の保存）' + mark, bldEval * (self ? 0.0015 : 0.004)]);
+    else items.push(['登録免許税（建物の移転）' + mark, bldEval * (self ? 0.003 : 0.02)]);
   }
+  if (loan > 0) items.push(['登録免許税（抵当権の設定）', loan * (self ? 0.001 : 0.004)]);
 
-  // 印紙税（概算）
-  let inshi = 1;
-  if (price <= 500) inshi = 0.1;
-  else if (price <= 1000) inshi = 0.5;
-  else if (price <= 5000) inshi = 1;
-  else if (price <= 10000) inshi = 3;
-  items.push(['印紙税（概算）', inshi]);
-  total += inshi;
+  items.push(['不動産取得税（土地）' + mark, landEval * 0.5 * 0.03]);
+  if (bldEval > 0) items.push(['不動産取得税（建物）' + mark, bldEval * (use === 'biz' ? 0.04 : 0.03)]);
 
-  // 登録免許税
-  const tokki = type === 'shinto' ? Math.round(price * 0.004 * 10) / 10 : Math.round(price * 0.02 * 10) / 10;
-  items.push(['登録免許税（所有権移転）', tokki]);
-  total += tokki;
-
-  // 不動産取得税
-  const shutoku = Math.round(price * 0.03 * 10) / 10;
-  items.push(['不動産取得税（概算）', shutoku]);
-  total += shutoku;
-
-  // 司法書士費用
-  items.push(['司法書士報酬（目安）', 10]);
-  total += 10;
-
-  // ローン関連
-  if (loan === 'yes') {
-    items.push(['ローン事務手数料（目安）', 5]);
-    items.push(['火災保険料（目安）', 15]);
-    total += 20;
+  items.push(['司法書士報酬（目安）', loan > 0 ? 15 : 10]);
+  if (loan > 0) {
+    items.push(['融資事務手数料（借入×2.2%で仮計算）', loan * 0.022]);
+    if (type !== 'tochi') items.push(['火災保険料（目安）', 15]);
   }
+  items.push(['固定資産税等の日割り精算（目安）', 5]);
 
-  // 固定資産税精算
-  items.push(['固定資産税等精算（目安）', 5]);
-  total += 5;
-
+  const total = items.reduce((sum, [, v]) => sum + v, 0);
   const tbody = document.getElementById('shohi-table');
   tbody.innerHTML = items.map(([label, val]) =>
     `<tr><td>${label}</td><td>${val.toFixed(1)}万円</td></tr>`
   ).join('');
-  document.getElementById('s-total').textContent = total.toFixed(1) + '万円';
+  document.getElementById('s-total').textContent = total.toFixed(1) + '万円（価格の' + (total / price * 100).toFixed(1) + '%）';
   document.getElementById('shohi-result').style.display = 'block';
+}
+
+function stampLoan(p) {
+  // 金銭消費貸借契約書の印紙税（軽減なし）。p は万円
+  const table = [[10,0.02],[50,0.04],[100,0.1],[500,0.2],[1000,1],[5000,2],[10000,6],[50000,10],[100000,20],[500000,40]];
+  for (const [limit, tax] of table) if (p <= limit) return tax;
+  return 60;
 }
 
 // 仲介手数料
 function calcChukaisho() {
   const price = parseFloat(document.getElementById('c-price').value);
   if (!price) return;
-  const fee = price * 0.03 + 6;
-  const feeTax = fee * 1.1;
+  const feeTax = chukaiFee(price);
+  const fee = feeTax / 1.1;
   document.getElementById('c-fee').textContent = fee.toFixed(1) + '万円';
   document.getElementById('c-fee-tax').textContent = feeTax.toFixed(1) + '万円';
   document.getElementById('chukaisho-result').style.display = 'grid';
@@ -1204,12 +1232,13 @@ function calcTaiyo() {
     remain = Math.max(Math.floor((legal - age) + age * 0.2), 2);
   }
 
-  const rate = (1 / remain).toFixed(3);
+  const rateNum = Math.ceil(1000 / remain) / 1000; // 国税庁の定額法の償却率表と同じ値
+  const rate = rateNum.toFixed(3);
   document.getElementById('t-remain').textContent = remain + '年';
-  document.getElementById('t-rate').textContent = rate + '（' + (1/remain*100).toFixed(1) + '%）';
+  document.getElementById('t-rate').textContent = rate + '（' + (rateNum*100).toFixed(1) + '%）';
 
   if (bldprice) {
-    const depr = (bldprice / remain).toFixed(1);
+    const depr = (bldprice * rateNum).toFixed(1);
     document.getElementById('t-depr').textContent = depr + '万円/年';
     document.getElementById('t-depr-row').style.display = 'flex';
   } else {
