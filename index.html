@@ -5,6 +5,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#1a1d27">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="不動産計算">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
 <title>不動産計算ツール</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
@@ -36,15 +44,14 @@ padding-bottom: 80px;
 
 header {
 background: linear-gradient(135deg, #1a1d27 0%, #22263a 100%);
-padding: 20px 16px 16px;
-border-bottom: 1px solid var(--border);
-position: sticky;
-top: 0;
-z-index: 100;
+padding: calc(12px + env(safe-area-inset-top)) 16px 10px;
+display: flex;
+align-items: baseline;
+gap: 10px;
 }
 
 header h1 {
-font-size: 18px;
+font-size: 16px;
 font-weight: 700;
 letter-spacing: 0.05em;
 color: var(--gold);
@@ -57,25 +64,86 @@ margin-top: 2px;
 }
 
 .tabs {
-display: flex;
-overflow-x: auto;
-gap: 4px;
-padding: 12px 16px;
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 6px;
+padding: 8px 16px 10px;
 background: var(--surface);
 border-bottom: 1px solid var(--border);
-scrollbar-width: none;
 position: sticky;
-top: 69px;
+top: 0;
 z-index: 99;
 }
 
 .tabs::-webkit-scrollbar { display: none; }
 
-.tab {
-flex-shrink: 0;
-padding: 8px 14px;
+.actions {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 8px;
+margin: 4px 0 16px;
+}
+
+.btn-sub {
+padding: 13px;
+border-radius: 10px;
+border: 1px solid var(--border);
+background: var(--surface);
+color: var(--text);
+font-size: 14px;
+font-weight: 500;
+font-family: inherit;
+cursor: pointer;
+}
+
+.btn-sub.primary {
+background: linear-gradient(135deg, var(--accent), var(--accent2));
+border: none;
+color: #fff;
+font-weight: 700;
+}
+
+.btn-sub:active { opacity: 0.8; }
+
+.link-btn {
+display: block;
+width: 100%;
+margin-top: 10px;
+padding: 11px;
+border-radius: 10px;
+border: 1px dashed var(--accent);
+background: transparent;
+color: var(--accent);
+font-size: 13px;
+font-family: inherit;
+cursor: pointer;
+}
+
+.toast {
+position: fixed;
+left: 50%;
+bottom: calc(24px + env(safe-area-inset-bottom));
+transform: translateX(-50%) translateY(20px);
+background: var(--success);
+color: #fff;
+padding: 10px 18px;
 border-radius: 20px;
+font-size: 13px;
+font-weight: 500;
+opacity: 0;
+pointer-events: none;
+transition: all 0.25s;
+z-index: 200;
+}
+
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.tab {
+padding: 9px 2px;
+border-radius: 10px;
 font-size: 12px;
+text-align: center;
+min-width: 0;
 font-weight: 500;
 border: 1px solid var(--border);
 background: transparent;
@@ -274,14 +342,14 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
 </header>
 
 <div class="tabs">
-  <button class="tab active" onclick="switchTab('tanka')">単価・変換</button>
-  <button class="tab" onclick="switchTab('rimawari')">利回り</button>
-  <button class="tab" onclick="switchTab('loan')">ローン</button>
-  <button class="tab" onclick="switchTab('shohi')">諸費用</button>
-  <button class="tab" onclick="switchTab('taiyo')">耐用年数</button>
-  <button class="tab" onclick="switchTab('tenbai')">転売</button>
-  <button class="tab" onclick="switchTab('cf')">収支・売却</button>
-  <button class="tab" onclick="switchTab('sekisan')">積算</button>
+  <button class="tab active" data-tab="tanka" onclick="switchTab('tanka')">単価・変換</button>
+  <button class="tab" data-tab="rimawari" onclick="switchTab('rimawari')">利回り</button>
+  <button class="tab" data-tab="loan" onclick="switchTab('loan')">ローン</button>
+  <button class="tab" data-tab="shohi" onclick="switchTab('shohi')">諸費用</button>
+  <button class="tab" data-tab="taiyo" onclick="switchTab('taiyo')">耐用年数</button>
+  <button class="tab" data-tab="tenbai" onclick="switchTab('tenbai')">転売</button>
+  <button class="tab" data-tab="cf" onclick="switchTab('cf')">収支・売却</button>
+  <button class="tab" data-tab="sekisan" onclick="switchTab('sekisan')">積算</button>
 </div>
 
 <!-- タブ1：単価・変換 -->
@@ -500,6 +568,7 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
         <span class="result-label">諸費用合計（概算）</span>
         <span class="result-value big" id="s-total">—</span>
       </div>
+      <button class="link-btn" onclick="sendShohi()">この価格と諸費用を「収支・売却」に入れる →</button>
       <p class="note">※概算。登録免許税：土地の移転1.5%（令和11年3月末まで）、建物の移転2%・新築の保存0.4%・抵当権0.4%。自己居住用の住宅は、条件を満たせば建物の移転0.3%・保存0.15%・抵当権0.1%。不動産取得税：土地は評価額の1/2に3%、建物は住宅3%・住宅以外4%。新築住宅の1,200万円控除などの住宅向けの控除は入れていないので、該当すると取得税はさらに下がる。印紙税は令和9年3月末までの軽減税率。</p>
     </div>
   </div>
@@ -584,6 +653,7 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
         <span class="result-value green" id="t-depr">—</span>
       </div>
     </div>
+    <button class="link-btn" id="t-to-cf" style="display:none" onclick="sendLife()">この年数を「収支・売却」の償却年数に入れる →</button>
     <p class="note">中古の耐用年数（簡便法）：法定耐用年数を超えた物件は「法定耐用年数×20%」、超えていない物件は「（法定耐用年数−経過年数）＋経過年数×20%」。1年未満は切り捨て、最低2年。経過年数は今日買った場合で計算している。表の年数は住宅用で、事務所・店舗などは年数が違う（例：RC造の事務所50年、店舗39年）。</p>
   </div>
 </div>
@@ -999,12 +1069,12 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
 
 <script>
 function switchTab(id) {
-  document.querySelectorAll('.tab').forEach((t,i) => {
-    const ids = ['tanka','rimawari','loan','shohi','taiyo','tenbai','cf','sekisan'];
-    t.classList.toggle('active', ids[i] === id);
-  });
+  if (!document.getElementById('tab-' + id)) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+  saveState();
 }
 
 function fmt(n) {
@@ -1246,6 +1316,7 @@ function calcTaiyo() {
   }
 
   document.getElementById('taiyo-result').style.display = 'grid';
+  document.getElementById('t-to-cf').style.display = 'block';
 }
 
 // ===== 売買の共通部品 =====
@@ -1376,6 +1447,9 @@ function irr(flows) {
 }
 
 function calcCF() {
+  // 法人のときだけ税率の欄を出す
+  document.getElementById('cf-corp-tax').closest('.field').style.visibility =
+    document.getElementById('cf-owner').value === 'corp' ? 'visible' : 'hidden';
   const price = num('cf-price');
   const cost = num('cf-cost');
   const loan = num('cf-loan');
@@ -1513,7 +1587,169 @@ function calcSekisan() {
   if (price) document.getElementById('sk-ratio').textContent = pct(total / price, 1);
   document.getElementById('sk-result').style.display = 'grid';
 }
+
+// ===== 使いやすさ（入力の保存・コピー・クリア・タブ間の受け渡し） =====
+const STORE_KEY = 'fudosan-calc-v1';
+const TAB_NAMES = {};
+document.querySelectorAll('.tab').forEach(t => { TAB_NAMES[t.dataset.tab] = t.textContent.trim(); });
+
+function saveState() {
+  try {
+    const values = {};
+    document.querySelectorAll('.tab-content input[id], .tab-content select[id]').forEach(el => {
+      if (el.readOnly) return;
+      values[el.id] = el.value;
+    });
+    const active = document.querySelector('.tab.active');
+    localStorage.setItem(STORE_KEY, JSON.stringify({ tab: active ? active.dataset.tab : 'tanka', values }));
+  } catch (e) { /* 保存できない環境では何もしない */ }
+}
+
+function recalcAll() {
+  [calcTanka, calcRimawari, calcInverse, calcLoan, calcShohi, calcChukaisho, calcTaiyo, calcTenbai, calcCF, calcSekisan]
+    .forEach(fn => { try { fn(); } catch (e) {} });
+}
+
+function restoreState() {
+  let data = null;
+  try { data = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (e) {}
+  if (!data) return;
+  Object.entries(data.values || {}).forEach(([id, v]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = v;
+  });
+  recalcAll();
+  if (data.tab) switchTab(data.tab);
+}
+
+// 結果が出たら最初は隠れている要素を覚えておく（クリアで戻すため）
+const initiallyHidden = [...document.querySelectorAll('.tab-content [style*="display:none"]')];
+
+function clearTab(tab) {
+  if (!confirm('「' + TAB_NAMES[tab.id.replace('tab-', '')] + '」の入力をすべて消す？')) return;
+  tab.querySelectorAll('input').forEach(el => { el.value = el.defaultValue; });
+  tab.querySelectorAll('select').forEach(el => {
+    const def = [...el.options].findIndex(o => o.defaultSelected);
+    el.selectedIndex = def >= 0 ? def : 0;
+  });
+  initiallyHidden.forEach(el => { if (tab.contains(el)) el.style.display = 'none'; });
+  window.scrollTo(0, 0);
+  saveState();
+  showToast('クリアしました');
+}
+
+function tabText(tab) {
+  const lines = ['【' + TAB_NAMES[tab.id.replace('tab-', '')] + '】'];
+  tab.querySelectorAll('.card').forEach(card => {
+    if (card.offsetParent === null) return;
+    const part = [];
+    let hasData = false;
+    card.querySelectorAll('.field').forEach(f => {
+      const el = f.querySelector('input, select');
+      const label = f.querySelector('label');
+      if (!el || !label || f.offsetParent === null || el.readOnly || getComputedStyle(f).visibility === 'hidden') return;
+      const v = el.tagName === 'SELECT' ? el.selectedOptions[0].text : el.value;
+      if (!v) return;
+      if (el.tagName !== 'SELECT') hasData = true;
+      part.push('・' + label.innerText.trim() + '：' + v);
+    });
+    card.querySelectorAll('.result-item').forEach(r => {
+      if (r.offsetParent === null) return;
+      const spans = r.querySelectorAll('span');
+      if (spans.length < 2) return;
+      const v = spans[1].innerText.trim();
+      if (!v || v === '—') return;
+      hasData = true;
+      part.push('▶ ' + spans[0].innerText.trim() + '：' + v);
+    });
+    card.querySelectorAll('tbody[id] tr').forEach(tr => {
+      if (tr.offsetParent === null) return;
+      hasData = true;
+      part.push('　' + [...tr.cells].map(c => c.innerText.trim()).join(' / '));
+    });
+    if (hasData) {
+      const title = card.querySelector('.card-title');
+      const name = title ? [...title.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim() : '';
+      lines.push('', '■' + name, ...part);
+    }
+  });
+  return lines.length > 1 ? lines.join('\n') : '';
+}
+
+async function copyTab(tab) {
+  const text = tabText(tab);
+  if (!text) { showToast('先に数字を入力してね'); return; }
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e2) {}
+    ta.remove();
+  }
+  showToast('結果をコピーしました（LINEなどに貼れます）');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function setValue(id, v) {
+  const el = document.getElementById(id);
+  if (el) el.value = v;
+}
+
+function sendLife() {
+  const years = parseInt(document.getElementById('t-remain').textContent, 10);
+  if (!years) return;
+  setValue('cf-life', years);
+  const bld = document.getElementById('t-bldprice').value;
+  if (bld) setValue('cf-bld', bld);
+  calcCF();
+  switchTab('cf');
+  showToast('償却年数を入れました');
+}
+
+function sendShohi() {
+  const price = document.getElementById('s-price').value;
+  const total = parseFloat(document.getElementById('s-total').textContent);
+  if (!price || isNaN(total)) return;
+  setValue('cf-price', price);
+  setValue('cf-cost', total.toFixed(1));
+  const loan = document.getElementById('s-loan').value;
+  if (loan) setValue('cf-loan', loan);
+  calcCF();
+  switchTab('cf');
+  showToast('価格と諸費用を入れました');
+}
+
+// 各タブの下に「コピー」「クリア」ボタンを付ける
+document.querySelectorAll('.tab-content').forEach(tab => {
+  const bar = document.createElement('div');
+  bar.className = 'actions';
+  bar.innerHTML = '<button class="btn-sub primary">📋 結果をコピー</button><button class="btn-sub">クリア</button>';
+  bar.children[0].onclick = () => copyTab(tab);
+  bar.children[1].onclick = () => clearTab(tab);
+  tab.appendChild(bar);
+});
+
+// 入力のたびに保存。数字欄はタップしたら全選択して打ち直しやすく
+document.addEventListener('input', saveState);
+document.addEventListener('change', saveState);
+document.addEventListener('focusin', e => {
+  if (e.target.matches('input[type="number"]')) setTimeout(() => e.target.select(), 0);
+});
+
+restoreState();
+calcCF();
 </script>
 
+<div class="toast" id="toast"></div>
 </body>
 </html>
