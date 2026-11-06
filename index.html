@@ -10,26 +10,26 @@
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
 
 :root {
-–bg: #0f1117;
-–surface: #1a1d27;
-–surface2: #22263a;
-–border: #2e3452;
-–accent: #4f8ef7;
-–accent2: #7c5cbf;
-–gold: #e8c96a;
-–text: #e8eaf6;
-–text2: #8b90b0;
-–success: #4caf9a;
-–radius: 14px;
+--bg: #0f1117;
+--surface: #1a1d27;
+--surface2: #22263a;
+--border: #2e3452;
+--accent: #4f8ef7;
+--accent2: #7c5cbf;
+--gold: #e8c96a;
+--text: #e8eaf6;
+--text2: #8b90b0;
+--success: #4caf9a;
+--radius: 14px;
 }
 
-- { box-sizing: border-box; margin: 0; padding: 0; }
-  :root { color-scheme: dark; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root { color-scheme: dark; }
 
 body {
-font-family: ‘Noto Sans JP’, sans-serif;
-background: var(–bg);
-color: var(–text);
+font-family: 'Noto Sans JP', sans-serif;
+background: var(--bg);
+color: var(--text);
 min-height: 100vh;
 padding-bottom: 80px;
 }
@@ -37,7 +37,7 @@ padding-bottom: 80px;
 header {
 background: linear-gradient(135deg, #1a1d27 0%, #22263a 100%);
 padding: 20px 16px 16px;
-border-bottom: 1px solid var(–border);
+border-bottom: 1px solid var(--border);
 position: sticky;
 top: 0;
 z-index: 100;
@@ -47,12 +47,12 @@ header h1 {
 font-size: 18px;
 font-weight: 700;
 letter-spacing: 0.05em;
-color: var(–gold);
+color: var(--gold);
 }
 
 header p {
 font-size: 11px;
-color: var(–text2);
+color: var(--text2);
 margin-top: 2px;
 }
 
@@ -61,8 +61,8 @@ display: flex;
 overflow-x: auto;
 gap: 4px;
 padding: 12px 16px;
-background: var(–surface);
-border-bottom: 1px solid var(–border);
+background: var(--surface);
+border-bottom: 1px solid var(--border);
 scrollbar-width: none;
 position: sticky;
 top: 69px;
@@ -77,17 +77,17 @@ padding: 8px 14px;
 border-radius: 20px;
 font-size: 12px;
 font-weight: 500;
-border: 1px solid var(–border);
+border: 1px solid var(--border);
 background: transparent;
-color: var(–text2);
+color: var(--text2);
 cursor: pointer;
 transition: all 0.2s;
 white-space: nowrap;
 }
 
 .tab.active {
-background: var(–accent);
-border-color: var(–accent);
+background: var(--accent);
+border-color: var(--accent);
 color: #fff;
 }
 
@@ -102,9 +102,9 @@ animation: fadeIn 0.2s ease;
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
 .card {
-background: var(–surface);
-border: 1px solid var(–border);
-border-radius: var(–radius);
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: var(--radius);
 padding: 16px;
 margin-bottom: 12px;
 }
@@ -112,7 +112,7 @@ margin-bottom: 12px;
 .card-title {
 font-size: 13px;
 font-weight: 700;
-color: var(–gold);
+color: var(--gold);
 margin-bottom: 14px;
 display: flex;
 align-items: center;
@@ -128,29 +128,29 @@ margin-bottom: 12px;
 label {
 display: block;
 font-size: 11px;
-color: var(–text2);
+color: var(--text2);
 margin-bottom: 5px;
 font-weight: 500;
 }
 
 input, select {
 width: 100%;
-background: var(–surface2);
-border: 1px solid var(–border);
+background: var(--surface2);
+border: 1px solid var(--border);
 border-radius: 8px;
 padding: 10px 12px;
 font-size: 15px;
-color: var(–text);
-font-family: ‘DM Mono’, monospace;
+color: var(--text);
+font-family: 'DM Mono', monospace;
 outline: none;
 transition: border-color 0.2s;
 -webkit-appearance: none;
 }
 
-input:focus, select:focus { border-color: var(–accent); }
+input:focus, select:focus { border-color: var(--accent); }
 
 select {
-background-image: url(“data:image/svg+xml,%3Csvg xmlns=‘http://www.w3.org/2000/svg’ width=‘12’ height=‘12’ viewBox=‘0 0 24 24’ fill=‘none’ stroke=’%238b90b0’ stroke-width=‘2’%3E%3Cpath d=‘M6 9l6 6 6-6’/%3E%3C/svg%3E”);
+background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b90b0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
 background-repeat: no-repeat;
 background-position: right 12px center;
 padding-right: 32px;
@@ -161,7 +161,7 @@ width: 100%;
 padding: 13px;
 border-radius: 10px;
 border: none;
-background: linear-gradient(135deg, var(–accent), var(–accent2));
+background: linear-gradient(135deg, var(--accent), var(--accent2));
 color: #fff;
 font-size: 14px;
 font-weight: 700;
@@ -179,8 +179,8 @@ margin-top: 12px;
 }
 
 .result-item {
-background: var(–surface2);
-border: 1px solid var(–border);
+background: var(--surface2);
+border: 1px solid var(--border);
 border-radius: 10px;
 padding: 12px 14px;
 display: flex;
@@ -190,26 +190,26 @@ align-items: center;
 
 .result-label {
 font-size: 11px;
-color: var(–text2);
+color: var(--text2);
 }
 
 .result-value {
-font-family: ‘DM Mono’, monospace;
+font-family: 'DM Mono', monospace;
 font-size: 16px;
 font-weight: 500;
-color: var(–accent);
+color: var(--accent);
 }
 
 .result-value.big {
 font-size: 20px;
-color: var(–gold);
+color: var(--gold);
 }
 
-.result-value.green { color: var(–success); }
+.result-value.green { color: var(--success); }
 
 .divider {
 border: none;
-border-top: 1px solid var(–border);
+border-top: 1px solid var(--border);
 margin: 12px 0;
 }
 
@@ -221,7 +221,7 @@ gap: 8px;
 
 .note {
 font-size: 10px;
-color: var(–text2);
+color: var(--text2);
 margin-top: 6px;
 line-height: 1.5;
 }
@@ -231,9 +231,9 @@ display: inline-block;
 font-size: 10px;
 padding: 2px 8px;
 border-radius: 10px;
-background: var(–surface2);
-border: 1px solid var(–border);
-color: var(–text2);
+background: var(--surface2);
+border: 1px solid var(--border);
+color: var(--text2);
 margin-right: 4px;
 margin-bottom: 4px;
 }
@@ -246,23 +246,23 @@ margin-top: 8px;
 }
 
 th {
-background: var(–surface2);
+background: var(--surface2);
 padding: 8px;
 text-align: left;
-color: var(–text2);
+color: var(--text2);
 font-weight: 500;
-border-bottom: 1px solid var(–border);
+border-bottom: 1px solid var(--border);
 }
 
 td {
 padding: 8px;
-border-bottom: 1px solid var(–border);
-font-family: ‘DM Mono’, monospace;
+border-bottom: 1px solid var(--border);
+font-family: 'DM Mono', monospace;
 }
 
 tr:last-child td { border-bottom: none; }
 
-tr.highlight td { color: var(–gold); font-weight: 500; }
+tr.highlight td { color: var(--gold); font-weight: 500; }
 </style>
 
 </head>
