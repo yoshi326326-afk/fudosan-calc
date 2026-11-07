@@ -1176,9 +1176,19 @@ color: var(--gold);
         <input type="number" inputmode="decimal" id="tb-loan-fee" placeholder="例：1.1" step="0.1" oninput="calcTenbai()">
       </div>
     </div>
-    <div class="field">
-      <label>融資期間（ヶ月）※この月までに売って返す</label>
-      <input type="number" inputmode="decimal" id="tb-loan-term" placeholder="例：12" oninput="calcTenbai()">
+    <div class="row2">
+      <div class="field">
+        <label>融資期間（ヶ月）</label>
+        <input type="number" inputmode="decimal" id="tb-loan-term" placeholder="例：12" oninput="calcTenbai()">
+      </div>
+      <div class="field">
+        <label>利息の払い方</label>
+        <select id="tb-int-mode" onchange="calcTenbai()">
+          <option value="monthly">毎月払い</option>
+          <option value="upfront">先取り（融資時に差し引き）</option>
+          <option value="end">期日に元金と一括</option>
+        </select>
+      </div>
     </div>
     <div class="note">利息は保有期間中の分だけ計算し、元本は売却代金で一括返済する想定（期日一括返済）。利息を毎月払う方式でも先取りの方式でも、総額はほぼ同じ。</div>
 
@@ -1208,6 +1218,39 @@ color: var(--gold);
         <span class="result-value" id="tb-warn" style="color:#e57373">—</span>
       </div>
     </div>
+  </div>
+
+  <div class="card" id="pj-cash-card" style="display:none">
+    <div class="card-title"><span>💴</span>必要なキャッシュ</div>
+    <div class="result-grid" style="margin-top:0">
+      <div class="result-item">
+        <span class="result-label" id="pj-out-label">手出し（売れるまでに自分で出すお金）</span>
+        <span class="result-value big" id="pj-out">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">売れるまでに出ていくお金の合計</span>
+        <span class="result-value" id="pj-total-cost">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">融資でまかなえる額</span>
+        <span class="result-value" id="pj-cover">—</span>
+      </div>
+    </div>
+    <table style="margin-top:12px">
+      <thead><tr><th>タイミング（万円）</th><th>出ていく</th><th>融資</th><th>手出し</th></tr></thead>
+      <tbody id="pj-cash-table"></tbody>
+    </table>
+    <div class="result-grid" id="pj-exit-box" style="display:none">
+      <div class="result-item">
+        <span class="result-label" id="pj-exit-label">売却時に戻ってくるお金</span>
+        <span class="result-value" id="pj-exit">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">手出しを差し引いた利益（粗利）</span>
+        <span class="result-value green" id="pj-net">—</span>
+      </div>
+    </div>
+    <div class="note">決済時の出ていくお金＝仕入価格＋仲介手数料・登録免許税・不動産取得税・仕入時の経費＋融資の事務手数料（先取りなら利息も）。不動産取得税は実際には決済の数か月後に届くが、ここでは決済時に含めている。リフォームの融資は工事のときに出る想定。販売時の仲介手数料や消費税は、売却代金から払う想定で手出しに含めていない。</div>
   </div>
 
   <div class="card" id="tb-stress-card" style="display:none">
@@ -1874,9 +1917,17 @@ function tenbaiProfit(buy, opt = {}) {
 
   const cost = items.reduce((s, [, v]) => s + v, 0);
   const profit = sell - buy - cost;
-  // 売却までに出ていくお金から借入を引いたもの
-  const equity = buy + buyFee + reg + acq + buyOther + reform + loanFee + interest + hold - loan;
-  return { items, profit, salesExTax, equity, months, loan, loanFee, interest, sell };
+  // 売却までに出ていくお金から借入を引いたもの（期日一括の利息は売却時に払うので含めない）
+  const intMode = document.getElementById('tb-int-mode').value;
+  const interestBefore = intMode === 'end' ? 0 : interest;
+  const equity = buy + buyFee + reg + acq + buyOther + reform + loanFee + interestBefore + hold - loan;
+  const ltv = num('tb-ltv') / 100;
+  const loanReform = document.getElementById('tb-loan-base').value === 'reform' ? reform * ltv : 0;
+  return {
+    items, profit, salesExTax, equity, months, loan, loanFee, interest, sell, intMode,
+    buyCosts: buyFee + reg + acq + buyOther, reform, hold, loanBuy: loan - loanReform, loanReform,
+    sellCosts: sellFee + sellOther + taxPay,
+  };
 }
 
 // 目標の利益率を取るのに必要な販売価格（税込）。target は 0.15 のような割合
@@ -1989,6 +2040,45 @@ function calcTenbai() {
   const over = r.loan > 0 && term > 0 && r.months > term;
   show('tb-warn-row', over);
   document.getElementById('tb-warn').textContent = over ? '保有期間が融資期間を' + (r.months - term) + 'ヶ月超えている' : '';
+
+  // 必要なキャッシュ（タイミング別）
+  const upfront = r.intMode === 'upfront' ? r.interest : 0;
+  const monthlyInt = r.intMode === 'monthly' ? r.interest : 0;
+  const cashRows = [
+    ['決済時（仕入）', buy + r.buyCosts + r.loanFee + upfront, r.loanBuy],
+    ['リフォーム時', r.reform, r.loanReform],
+    ['保有中（' + r.months + 'ヶ月）', monthlyInt + r.hold, 0],
+  ].filter(([, out]) => out > 0);
+  const totalOut = cashRows.reduce((s2, [, o]) => s2 + o, 0);
+  const totalLoan = cashRows.reduce((s2, [, , l]) => s2 + l, 0);
+  const own = totalOut - totalLoan;
+  const outEl = document.getElementById('pj-out');
+  if (own > 0.05) {
+    outEl.textContent = '手出しあり ' + man(Math.round(own * 10) / 10);
+    outEl.style.color = 'var(--gold)';
+  } else {
+    outEl.textContent = '手出しなし' + (own < -0.05 ? '（融資が' + man(Math.round(-own * 10) / 10) + '多い）' : '');
+    outEl.style.color = 'var(--success)';
+  }
+  document.getElementById('pj-total-cost').textContent = man(Math.round(totalOut * 10) / 10);
+  document.getElementById('pj-cover').textContent = man(Math.round(totalLoan * 10) / 10) + '（' + (totalOut > 0 ? pct(totalLoan / totalOut, 1) : '—') + '）';
+  const cell = v => (Math.round(v * 10) / 10).toLocaleString('ja-JP', { maximumFractionDigits: 1 });
+  document.getElementById('pj-cash-table').innerHTML = cashRows.map(([label, o, l]) =>
+    `<tr><td>${label}</td><td>${cell(o)}</td><td>${l ? cell(l) : '—'}</td><td>${cell(o - l)}</td></tr>`
+  ).join('') + `<tr class="highlight"><td>合計</td><td>${cell(totalOut)}</td><td>${cell(totalLoan)}</td><td>${cell(own)}</td></tr>`;
+  show('pj-cash-card', true, 'block');
+
+  // 売却時
+  show('pj-exit-box', !!sellUse, 'grid');
+  if (sellUse) {
+    const endInt = r.intMode === 'end' ? r.interest : 0;
+    const back = sellUse - r.sellCosts - r.loan - endInt;
+    document.getElementById('pj-exit-label').textContent = '売却時に戻ってくるお金（' + man(Math.round(sellUse * 10) / 10) + 'で売り、返済・販売費用' + (endInt ? '・利息' : '') + 'を払ったあと）';
+    document.getElementById('pj-exit').textContent = man(Math.round(back * 10) / 10);
+    const net = document.getElementById('pj-net');
+    net.textContent = man(Math.round((back - own) * 10) / 10);
+    net.style.color = back - own < 0 ? '#e57373' : 'var(--success)';
+  }
 
   // 売れなかったときの試算
   if (sellUse) {
@@ -2430,6 +2520,10 @@ const SUMMARY = {
     ['i', 'tb-rate', '金利', '%'], ['i', 'tb-loan-fee', '事務手数料', '%'], ['i', 'tb-loan-term', '融資期間', 'ヶ月'],
     ['o', 'pj-loan', '借入額'], ['o', 'pj-interest', '保有期間中の利息'], ['o', 'pj-monthly', '月々の利息'],
     ['o', 'pj-equity', '必要な自己資金'], ['o', 'tb-warn', '注意'],
+    ['h', '必要なキャッシュ'], ['i', 'tb-int-mode', '利息の払い方'],
+    ['o', 'pj-out', '手出し'], ['o', 'pj-total-cost', '売れるまでに出ていくお金'], ['o', 'pj-cover', '融資でまかなえる額'],
+    ['o', 'pj-exit', '売却時に戻るお金'], ['o', 'pj-net', '手出しを差し引いた利益'],
+    ['tb', 'pj-cash-table', 'タイミング別のお金'],
     ['tb', 'tb-stress', '売れなかったときの試算'],
   ],
   cf: [
