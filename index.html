@@ -171,6 +171,11 @@ input.linked:focus { border-color: var(--success); box-shadow: 0 0 0 2px rgba(76
 
 .link-mark { font-size: 10px; }
 
+/* 後から届く支払い */
+tr.later td { color: var(--gold); }
+.when { font-size: 11px; color: var(--text2); white-space: nowrap; }
+tr.later .when { color: var(--gold); font-weight: 500; }
+
 .link-legend {
 grid-column: 1 / -1;
 font-size: 11px;
@@ -877,7 +882,7 @@ color: var(--gold);
       <hr class="divider">
       <table>
         <thead>
-          <tr><th>費用項目</th><th>概算金額</th></tr>
+          <tr><th>費用項目</th><th>支払う時期</th><th>概算金額</th></tr>
         </thead>
         <tbody id="shohi-table"></tbody>
       </table>
@@ -885,8 +890,16 @@ color: var(--gold);
         <span class="result-label">諸費用合計（概算）</span>
         <span class="result-value big" id="s-total">—</span>
       </div>
+      <div class="result-item" style="margin-top:8px">
+        <span class="result-label">決済までに必要なお金</span>
+        <span class="result-value" id="s-now">—</span>
+      </div>
+      <div class="result-item" style="margin-top:8px">
+        <span class="result-label">⏰ 後から届くお金（不動産取得税・決済の数か月後）</span>
+        <span class="result-value" id="s-later" style="color:var(--gold)">—</span>
+      </div>
       <button class="link-btn" onclick="sendShohi()">この価格と諸費用を「収支・売却」に入れる →</button>
-      <p class="note">※概算。登録免許税：土地の移転1.5%（令和11年3月末まで）、建物の移転2%・新築の保存0.4%・抵当権0.4%。自己居住用の住宅は、条件を満たせば建物の移転0.3%・保存0.15%・抵当権0.1%。不動産取得税：土地は評価額の1/2に3%、建物は住宅3%・住宅以外4%。新築住宅の1,200万円控除などの住宅向けの控除は入れていないので、該当すると取得税はさらに下がる。印紙税は令和9年3月末までの軽減税率。</p>
+      <p class="note">※概算。登録免許税：土地の移転1.5%（令和11年3月末まで）、建物の移転2%・新築の保存0.4%・抵当権0.4%。自己居住用の住宅は、条件を満たせば建物の移転0.3%・保存0.15%・抵当権0.1%。不動産取得税：土地は評価額の1/2に3%、建物は住宅3%・住宅以外4%。新築住宅の1,200万円控除などの住宅向けの控除は入れていないので、該当すると取得税はさらに下がる。印紙税は令和9年3月末までの軽減税率。⏰の不動産取得税は、決済の時ではなく、登記のあと都道府県から納税通知書が届いてから払う（届く時期は都道府県で違い、例えば栃木県は登記完了から4〜6か月後）。仲介手数料は、契約時に半金・決済時に残金を払う形が多い。</p>
     </div>
   </div>
 </div>
@@ -1209,7 +1222,7 @@ color: var(--gold);
     <div class="card-title"><span>🧾</span>費用の内訳</div>
     <div class="note" id="tb-detail-note" style="margin:0 0 8px"></div>
     <table>
-      <thead><tr><th>項目</th><th>金額</th></tr></thead>
+      <thead><tr><th>項目</th><th>時期</th><th>金額</th></tr></thead>
       <tbody id="tb-table"></tbody>
     </table>
   </div>
@@ -1357,7 +1370,7 @@ color: var(--gold);
         <span class="result-value green" id="pj-net">—</span>
       </div>
     </div>
-    <div class="note">決済時の出ていくお金＝仕入価格＋仲介手数料・登録免許税・不動産取得税・仕入時の経費＋融資の事務手数料（先取りなら利息も）。不動産取得税は実際には決済の数か月後に届くが、ここでは決済時に含めている。リフォームの融資は工事のときに出る想定。販売時の仲介手数料や消費税は、売却代金から払う想定で手出しに含めていない。</div>
+    <div class="note">決済時の出ていくお金＝仕入価格＋仲介手数料・登録免許税・仕入時の経費＋融資の事務手数料（先取りなら利息も）。⏰の不動産取得税は、決済の数か月後に納税通知書が届いてから払う（都道府県で時期が違う）。保有期間が短いと売却のあとに届くこともあるが、払う必要があるので手出しに含めている。リフォームの融資は工事のときに出る想定。販売時の仲介手数料や消費税は、売却代金から払う想定で手出しに含めていない。</div>
   </div>
 
   <div class="card" id="tb-stress-card" style="display:none">
@@ -1869,6 +1882,19 @@ function stampTax(p) {
   return 48;
 }
 
+// 支払う時期（項目名から決める）。2つ目が true のものは決済のあとで届く
+function timingOf(label) {
+  if (label.startsWith('不動産取得税')) return ['決済の数か月後', true];
+  if (label.startsWith('消費税の納税')) return ['決算後', true];
+  if (label.startsWith('印紙税（売買')) return ['契約時', false];
+  if (label.startsWith('仲介手数料') || label.startsWith('仕入の仲介')) return ['契約時・決済時', false];
+  if (label.startsWith('リフォーム')) return ['工事時', false];
+  if (label.startsWith('保有中')) return ['保有中', false];
+  if (label.startsWith('販売')) return ['売却時', false];
+  if (label.startsWith('融資事務') || label.startsWith('印紙税（金銭')) return ['融資時', false];
+  return ['決済時', false];
+}
+
 function calcShohi() {
   const price = parseFloat(document.getElementById('s-price').value);
   const type = document.getElementById('s-type').value;
@@ -1914,11 +1940,18 @@ function calcShohi() {
   items.push(['固定資産税等の日割り精算（目安）', 5]);
 
   const total = items.reduce((sum, [, v]) => sum + v, 0);
-  const tbody = document.getElementById('shohi-table');
-  tbody.innerHTML = items.map(([label, val]) =>
-    `<tr><td>${label}</td><td>${val.toFixed(1)}万円</td></tr>`
-  ).join('');
+  // 後から届くものは表の最後にまとめる
+  const rowsNow = items.filter(([label]) => !timingOf(label)[1]);
+  const rowsLater = items.filter(([label]) => timingOf(label)[1]);
+  const later = rowsLater.reduce((sum, [, v]) => sum + v, 0);
+  const row = ([label, val]) => {
+    const [when, isLater] = timingOf(label);
+    return `<tr${isLater ? ' class="later"' : ''}><td>${isLater ? '⏰ ' : ''}${label}</td><td class="when">${when}</td><td>${val.toFixed(1)}万円</td></tr>`;
+  };
+  document.getElementById('shohi-table').innerHTML = rowsNow.map(row).join('') + rowsLater.map(row).join('');
   document.getElementById('s-total').textContent = total.toFixed(1) + '万円（価格の' + (total / price * 100).toFixed(1) + '%）';
+  document.getElementById('s-now').textContent = (total - later).toFixed(1) + '万円';
+  document.getElementById('s-later').textContent = later.toFixed(1) + '万円';
   document.getElementById('shohi-result').style.display = 'block';
 }
 
@@ -2119,7 +2152,7 @@ function tenbaiProfit(buy, opt = {}) {
   return {
     items, profit, salesExTax, equity, months, loan, loanFee, interest, sell, intMode,
     buyCosts: buyFee + reg + acq + buyOther, reform, hold, loanBuy: loan - loanReform, loanReform,
-    sellCosts: sellFee + sellOther + taxPay,
+    sellCosts: sellFee + sellOther + taxPay, acq,
   };
 }
 
@@ -2204,9 +2237,12 @@ function calcTenbai() {
   const total = r.items.reduce((s, [, v]) => s + v, 0);
   document.getElementById('tb-detail-note').textContent = '販売価格 ' + man(Math.round(sellUse * 10) / 10) + (sellIn ? '（販売予定価格）' : '（必要な販売価格）') + 'で計算';
   document.getElementById('tb-table').innerHTML =
-    `<tr><td>仕入価格</td><td>${man(buy)}</td></tr>` +
-    r.items.map(([label, v]) => `<tr><td>${label}</td><td>${man(v)}</td></tr>`).join('') +
-    `<tr class="highlight"><td>費用の合計（仕入価格を除く）</td><td>${man(total)}</td></tr>`;
+    `<tr><td>仕入価格</td><td class="when">決済時</td><td>${man(buy)}</td></tr>` +
+    r.items.map(([label, v]) => {
+      const [when, isLater] = timingOf(label);
+      return `<tr${isLater ? ' class="later"' : ''}><td>${isLater ? '⏰ ' : ''}${label}</td><td class="when">${when}</td><td>${man(v)}</td></tr>`;
+    }).join('') +
+    `<tr class="highlight"><td>費用の合計（仕入価格を除く）</td><td></td><td>${man(total)}</td></tr>`;
   show('tb-detail-card', !!sellUse, 'block');
 
   // 仕入上限の逆算（販売予定価格と目標が必要）
@@ -2238,9 +2274,10 @@ function calcTenbai() {
   const upfront = r.intMode === 'upfront' ? r.interest : 0;
   const monthlyInt = r.intMode === 'monthly' ? r.interest : 0;
   const cashRows = [
-    ['決済時（仕入）', buy + r.buyCosts + r.loanFee + upfront, r.loanBuy],
+    ['決済時（仕入）', buy + r.buyCosts - r.acq + r.loanFee + upfront, r.loanBuy],
     ['リフォーム時', r.reform, r.loanReform],
     ['保有中（' + r.months + 'ヶ月）', monthlyInt + r.hold, 0],
+    ['⏰ 後日：不動産取得税', r.acq, 0, true],
   ].filter(([, out]) => out > 0);
   const totalOut = cashRows.reduce((s2, [, o]) => s2 + o, 0);
   const totalLoan = cashRows.reduce((s2, [, , l]) => s2 + l, 0);
@@ -2256,8 +2293,8 @@ function calcTenbai() {
   document.getElementById('pj-total-cost').textContent = man(Math.round(totalOut * 10) / 10);
   document.getElementById('pj-cover').textContent = man(Math.round(totalLoan * 10) / 10) + '（' + (totalOut > 0 ? pct(totalLoan / totalOut, 1) : '—') + '）';
   const cell = v => (Math.round(v * 10) / 10).toLocaleString('ja-JP', { maximumFractionDigits: 1 });
-  document.getElementById('pj-cash-table').innerHTML = cashRows.map(([label, o, l]) =>
-    `<tr><td>${label}</td><td>${cell(o)}</td><td>${l ? cell(l) : '—'}</td><td>${cell(o - l)}</td></tr>`
+  document.getElementById('pj-cash-table').innerHTML = cashRows.map(([label, o, l, isLater]) =>
+    `<tr${isLater ? ' class="later"' : ''}><td>${label}</td><td>${cell(o)}</td><td>${l ? cell(l) : '—'}</td><td>${cell(o - l)}</td></tr>`
   ).join('') + `<tr class="highlight"><td>合計</td><td>${cell(totalOut)}</td><td>${cell(totalLoan)}</td><td>${cell(own)}</td></tr>`;
   show('pj-cash-card', true, 'block');
 
