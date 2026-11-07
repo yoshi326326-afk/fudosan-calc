@@ -246,6 +246,8 @@ transition: border-color 0.2s;
 -webkit-appearance: none;
 }
 
+input::placeholder { color: var(--text2); opacity: 0.55; }
+
 input:focus, select:focus { border-color: var(--accent); }
 
 select {
@@ -728,7 +730,7 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
       </div>
       <div class="field">
         <label>土地の登録免許税（%）</label>
-        <input type="number" inputmode="decimal" id="tb-land-reg" value="1.5" step="0.1" oninput="calcTenbai()">
+        <input type="number" inputmode="decimal" id="tb-land-reg" placeholder="空欄なら1.5" step="0.1" oninput="calcTenbai()">
       </div>
     </div>
     <div class="field">
@@ -747,7 +749,7 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
       </div>
       <div class="field">
         <label>保有期間（ヶ月）</label>
-        <input type="number" inputmode="decimal" id="tb-months" value="6" oninput="calcTenbai()">
+        <input type="number" inputmode="decimal" id="tb-months" placeholder="空欄なら6" oninput="calcTenbai()">
       </div>
     </div>
     <div class="field">
@@ -920,16 +922,16 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
     <div class="row2">
       <div class="field">
         <label>空室・滞納率（%）</label>
-        <input type="number" inputmode="decimal" id="cf-vac" value="5" oninput="calcCF()">
+        <input type="number" inputmode="decimal" id="cf-vac" placeholder="空欄なら5" oninput="calcCF()">
       </div>
       <div class="field">
         <label>運営経費率（%）</label>
-        <input type="number" inputmode="decimal" id="cf-opex" value="20" oninput="calcCF()">
+        <input type="number" inputmode="decimal" id="cf-opex" placeholder="空欄なら20" oninput="calcCF()">
       </div>
     </div>
     <div class="field">
       <label>家賃の下落率（年 %）</label>
-      <input type="number" inputmode="decimal" id="cf-decline" value="1" step="0.1" oninput="calcCF()">
+      <input type="number" inputmode="decimal" id="cf-decline" placeholder="空欄なら1" step="0.1" oninput="calcCF()">
     </div>
     <div class="note">運営経費率は、空室分を引いたあとの家賃に対する割合（管理費・修繕・固都税・保険など）。一般的には15〜25%が目安。</div>
 
@@ -975,7 +977,7 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
     <div class="row2">
       <div class="field">
         <label>保有年数（年）</label>
-        <input type="number" inputmode="decimal" id="cf-hold" value="10" oninput="calcCF()">
+        <input type="number" inputmode="decimal" id="cf-hold" placeholder="空欄なら10" oninput="calcCF()">
       </div>
       <div class="field">
         <label>売却時の表面利回り（%）</label>
@@ -1002,7 +1004,7 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
       </div>
       <div class="field">
         <label>法人の実効税率（%）</label>
-        <input type="number" inputmode="decimal" id="cf-corp-tax" value="34" oninput="calcCF()">
+        <input type="number" inputmode="decimal" id="cf-corp-tax" placeholder="空欄なら34" oninput="calcCF()">
       </div>
     </div>
     <div class="note">売却価格＝売却する年の満室家賃÷売却時の表面利回り。個人の譲渡税は、保有6年以上を長期（20.315%）、5年以下を短期（39.63%）として計算する（正確には売却した年の1月1日時点で5年を超えているかで決まる）。取得費は購入価格＋購入諸費用−減価償却の累計で概算している。</div>
@@ -1071,11 +1073,11 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
     <div class="row2">
       <div class="field">
         <label>補正率（%）</label>
-        <input type="number" inputmode="decimal" id="sk-adj" value="100" oninput="calcSekisan()">
+        <input type="number" inputmode="decimal" id="sk-adj" placeholder="空欄なら100" oninput="calcSekisan()">
       </div>
       <div class="field">
         <label>持分（%）</label>
-        <input type="number" inputmode="decimal" id="sk-share" value="100" oninput="calcSekisan()">
+        <input type="number" inputmode="decimal" id="sk-share" placeholder="空欄なら100" oninput="calcSekisan()">
       </div>
     </div>
     <div class="note">路線価は国税庁の路線価図の数字（千円/㎡）。補正率には、形が悪い・間口が狭いなどの減額を入れる。区分マンションの場合は、敷地権の割合を持分に入れる。</div>
@@ -1096,7 +1098,7 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
       </div>
       <div class="field">
         <label>再調達価格（万円/㎡）</label>
-        <input type="number" inputmode="decimal" id="sk-unit" value="20" step="0.5" oninput="calcSekisan()">
+        <input type="number" inputmode="decimal" id="sk-unit" placeholder="空欄なら20" step="0.5" oninput="calcSekisan()">
       </div>
     </div>
     <div class="row2">
@@ -1390,9 +1392,18 @@ function calcTaiyo() {
 }
 
 // ===== 売買の共通部品 =====
+// 空欄のときに使う目安の数字（画面には「空欄なら○」と表示）
+const DEFAULTS = {
+  'tb-land-reg': 1.5, 'tb-months': 6,
+  'cf-vac': 5, 'cf-opex': 20, 'cf-decline': 1, 'cf-hold': 10, 'cf-corp-tax': 34,
+  'sk-adj': 100, 'sk-share': 100,
+};
+
 function num(id) {
   const v = parseFloat(document.getElementById(id).value);
-  return isNaN(v) ? 0 : v;
+  if (!isNaN(v)) return v;
+  if (id === 'sk-unit') return parseFloat(document.getElementById('sk-structure').selectedOptions[0].dataset.unit);
+  return DEFAULTS[id] ?? 0;
 }
 
 function man(v) {
@@ -1665,7 +1676,7 @@ function calcCF() {
 // ===== 積算評価 =====
 function setSekisanUnit() {
   const opt = document.getElementById('sk-structure').selectedOptions[0];
-  document.getElementById('sk-unit').value = opt.dataset.unit;
+  document.getElementById('sk-unit').placeholder = '空欄なら' + opt.dataset.unit;
 }
 
 function calcSekisan() {
@@ -1717,10 +1728,16 @@ function restoreState() {
   let data = null;
   try { data = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (e) {}
   if (!data) return;
+  const OLD_PRESETS = { 'tb-land-reg': '1.5', 'tb-months': '6', 'cf-vac': '5', 'cf-opex': '20', 'cf-decline': '1',
+    'cf-hold': '10', 'cf-corp-tax': '34', 'sk-adj': '100', 'sk-share': '100' };
   Object.entries(data.values || {}).forEach(([id, v]) => {
     const el = document.getElementById(id);
-    if (el) el.value = v;
+    if (!el) return;
+    if (OLD_PRESETS[id] === v) return; // 以前の初期値はそのまま空欄にする
+    if (id === 'sk-unit' && ['15', '18', '20'].includes(v)) return;
+    el.value = v;
   });
+  setSekisanUnit();
   recalcAll();
   if (data.tab) switchTab(data.tab);
 }
