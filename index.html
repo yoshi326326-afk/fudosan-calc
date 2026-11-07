@@ -501,7 +501,7 @@ color: var(--gold);
 
   /* タブは1列に並べる */
   .tabs {
-    grid-template-columns: repeat(9, 1fr);
+    grid-template-columns: repeat(10, 1fr);
     gap: 8px;
     padding: 10px 24px 12px;
     border: 1px solid var(--border);
@@ -554,6 +554,7 @@ color: var(--gold);
   <button class="tab" data-tab="rimawari" onclick="switchTab('rimawari')">利回り</button>
   <button class="tab" data-tab="loan" onclick="switchTab('loan')">ローン</button>
   <button class="tab" data-tab="shohi" onclick="switchTab('shohi')">諸費用</button>
+  <button class="tab" data-tab="chukai" onclick="switchTab('chukai')">仲介手数料</button>
   <button class="tab" data-tab="taiyo" onclick="switchTab('taiyo')">耐用年数</button>
   <button class="tab" data-tab="tenbai" onclick="switchTab('tenbai')">転売</button>
   <button class="tab" data-tab="pj" onclick="switchTab('pj')">PJローン</button>
@@ -782,24 +783,77 @@ color: var(--gold);
       <p class="note">※概算。登録免許税：土地の移転1.5%（令和11年3月末まで）、建物の移転2%・新築の保存0.4%・抵当権0.4%。自己居住用の住宅は、条件を満たせば建物の移転0.3%・保存0.15%・抵当権0.1%。不動産取得税：土地は評価額の1/2に3%、建物は住宅3%・住宅以外4%。新築住宅の1,200万円控除などの住宅向けの控除は入れていないので、該当すると取得税はさらに下がる。印紙税は令和9年3月末までの軽減税率。</p>
     </div>
   </div>
+</div>
 
+<!-- タブ：仲介手数料（売買） -->
+
+<div id="tab-chukai" class="tab-content">
   <div class="card">
-    <div class="card-title"><span>🤝</span>仲介手数料計算</div>
+    <div class="card-title"><span>🤝</span>売買の仲介手数料</div>
     <div class="field">
-      <label>売買価格（万円）</label>
-      <input type="number" inputmode="decimal" id="c-price" placeholder="例：3000" oninput="calcChukaisho()">
+      <label>売買価格（万円）※建物の消費税を含む総額</label>
+      <input type="number" inputmode="decimal" id="c-price" placeholder="例：5000" oninput="calcChukaisho()">
     </div>
+    <div class="row2">
+      <div class="field">
+        <label>建物価格・税込（万円）</label>
+        <input type="number" inputmode="decimal" id="c-bld" placeholder="例：1650" oninput="calcChukaisho()">
+      </div>
+      <div class="field">
+        <label>または 建物の消費税額（万円）</label>
+        <input type="number" inputmode="decimal" id="c-bld-tax" placeholder="例：150" oninput="calcChukaisho()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>受け取る相手</label>
+        <select id="c-side" onchange="calcChukaisho()">
+          <option value="1">片方から（片手）</option>
+          <option value="2">売主と買主の両方（両手）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>800万円以下の特例</label>
+        <select id="c-low" onchange="calcChukaisho()">
+          <option value="no">使わない</option>
+          <option value="yes">使う（上限30万円＋税）</option>
+        </select>
+      </div>
+    </div>
+    <div class="note">売主が課税事業者（宅建業者などの法人）なら、建物部分に消費税がかかる。売主が個人なら、ふつうは消費税はかからないので建物欄は空欄でいい。建物価格と消費税額の両方を入れた場合は、消費税額を優先する。</div>
+
     <div class="result-grid" id="chukaisho-result" style="display:none">
       <div class="result-item">
-        <span class="result-label">仲介手数料（税別）</span>
-        <span class="result-value big" id="c-fee">—</span>
+        <span class="result-label">手数料の計算に使う価格（消費税を除く）</span>
+        <span class="result-value" id="c-base">—</span>
       </div>
       <div class="result-item">
-        <span class="result-label">仲介手数料（税込）</span>
-        <span class="result-value" id="c-fee-tax">—</span>
+        <span class="result-label">仲介手数料の上限（税抜）</span>
+        <span class="result-value" id="c-fee">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">仲介手数料の上限（税込）</span>
+        <span class="result-value big" id="c-fee-tax">—</span>
+      </div>
+      <div class="result-item" id="c-both-row" style="display:none">
+        <span class="result-label">両手の合計（税込）</span>
+        <span class="result-value big green" id="c-both">—</span>
+      </div>
+      <div class="result-item" id="c-diff-row" style="display:none">
+        <span class="result-label">消費税を差し引かずに計算した場合との差（税込）</span>
+        <span class="result-value" id="c-diff">—</span>
       </div>
     </div>
-    <p class="note">宅建業法の上限（税抜）：200万円以下の部分5%、200万円超400万円以下の部分4%、400万円超の部分3%。400万円超なら「価格×3%+6万円」と同じ。800万円以下の空き家等は、事前に合意すれば30万円（税込33万円）まで受け取れる特例がある。</p>
+  </div>
+
+  <div class="card" id="c-detail-card" style="display:none">
+    <div class="card-title"><span>🧮</span>計算の内訳（税抜）</div>
+    <table>
+      <thead><tr><th>価格の区分</th><th>対象額</th><th>料率</th><th>金額</th></tr></thead>
+      <tbody id="c-table"></tbody>
+    </table>
+    <p class="note" id="c-formula"></p>
+    <p class="note">宅建業法の上限（税抜）：200万円以下の部分5%、200万円超400万円以下の部分4%、400万円超の部分3%。400万円を超えるときは「価格×3%＋6万円」の速算式と同じ結果になる。手数料を計算する価格には、建物の消費税を含めない。800万円以下の特例は、媒介の前に依頼者へ説明して合意した場合に、上限30万円（税込33万円）まで受け取れるもの。使える物件・相手は国土交通省の告示で確認すること。</p>
   </div>
 </div>
 
@@ -1628,13 +1682,45 @@ function stampLoan(p) {
 
 // 仲介手数料
 function calcChukaisho() {
-  const price = parseFloat(document.getElementById('c-price').value);
+  const price = num('c-price');
   if (!price) return;
-  const feeTax = chukaiFee(price);
-  const fee = feeTax / 1.1;
-  document.getElementById('c-fee').textContent = fee.toFixed(1) + '万円';
-  document.getElementById('c-fee-tax').textContent = feeTax.toFixed(1) + '万円';
-  document.getElementById('chukaisho-result').style.display = 'grid';
+  const taxIn = document.getElementById('c-bld-tax').value;
+  const bldTax = taxIn !== '' ? num('c-bld-tax') : num('c-bld') * 10 / 110;
+  const base = Math.max(price - bldTax, 0);
+
+  // 区分ごとの計算（税抜）
+  const tiers = [[0, 200, 0.05], [200, 400, 0.04], [400, Infinity, 0.03]];
+  let fee = 0;
+  const rows = [];
+  tiers.forEach(([lo, hi, rate]) => {
+    const part = Math.max(Math.min(base, hi) - lo, 0);
+    if (part <= 0) return;
+    fee += part * rate;
+    rows.push([hi === Infinity ? lo + '万円超の部分' : (lo ? lo + '万円超〜' : '') + hi + '万円以下の部分', part, rate, part * rate]);
+  });
+  const low = document.getElementById('c-low').value === 'yes' && base <= 800;
+  if (low) fee = Math.max(fee, 30);
+  const feeTax = fee * 1.1;
+  const side = parseInt(document.getElementById('c-side').value, 10);
+
+  document.getElementById('c-base').textContent = man(Math.round(base * 10) / 10) + (bldTax > 0 ? '（' + man(price) + '−消費税' + man(Math.round(bldTax * 10) / 10) + '）' : '');
+  const yen = v => Math.round(v * 10000).toLocaleString('ja-JP') + '円';
+  document.getElementById('c-fee').textContent = yen(fee);
+  document.getElementById('c-fee-tax').textContent = yen(feeTax);
+  show('c-both-row', side === 2);
+  document.getElementById('c-both').textContent = yen(feeTax * side);
+  const naive = chukaiFee(price);
+  show('c-diff-row', bldTax > 0 && !low);
+  document.getElementById('c-diff').textContent = yen(naive - feeTax) + '（片手あたり）';
+  show('chukaisho-result', true, 'grid');
+
+  document.getElementById('c-table').innerHTML = rows.map(([label, part, rate, v]) =>
+    `<tr><td>${label}</td><td>${man(Math.round(part * 10) / 10)}</td><td>${rate * 100}%</td><td>${yen(v)}</td></tr>`
+  ).join('') + (low ? '<tr class="highlight"><td colspan="3">800万円以下の特例（上限30万円）</td><td>300,000円</td></tr>' : '');
+  document.getElementById('c-formula').textContent = base > 400
+    ? '速算式：' + man(Math.round(base * 10) / 10) + ' × 3% ＋ 6万円 ＝ ' + yen(base * 0.03 + 6) + '（税抜）'
+    : '';
+  show('c-detail-card', true, 'block');
 }
 
 // 購入価格逆算
@@ -2471,7 +2557,7 @@ function closeCompare() { document.getElementById('compare').hidden = true; }
 function printSheet() {
   saveState();
   // ローン・単価・耐用年数は「収支」などと重なるので載せない。結果が出ているタブだけ載せる
-  const order = ['tenbai', 'pj', 'cf', 'sekisan', 'shohi', 'rimawari'];
+  const order = ['tenbai', 'pj', 'cf', 'sekisan', 'shohi', 'chukai', 'rimawari'];
   const sections = order.map(id => tabData(document.getElementById('tab-' + id)))
     .filter(d => d.cards.some(c => c.results.length || c.tables.length));
   if (!sections.length) { showToast('先に数字を入力してね'); return; }
