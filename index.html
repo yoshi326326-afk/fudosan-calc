@@ -635,44 +635,45 @@ color: var(--gold);
 
 <div id="tab-tanka" class="tab-content active">
   <div class="card">
-    <div class="card-title"><span>📐</span>平米 ↔ 坪 変換</div>
+    <div class="card-title"><span>📐</span>面積と単価</div>
     <div class="row2">
       <div class="field">
-        <label>平米数（㎡）</label>
+        <label>面積（㎡）</label>
         <input type="number" inputmode="decimal" id="sqm" placeholder="例：80" oninput="convertArea('sqm')">
       </div>
       <div class="field">
-        <label>坪数（坪）</label>
+        <label>面積（坪）</label>
         <input type="number" inputmode="decimal" id="tsubo" placeholder="例：24.2" oninput="convertArea('tsubo')">
       </div>
     </div>
-    <div class="note">1坪 = 3.30579㎡</div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span>💴</span>単価計算</div>
     <div class="field">
-      <label>物件価格（万円）</label>
+      <label>価格（万円）</label>
       <input type="number" inputmode="decimal" id="price" placeholder="例：3500" oninput="calcTanka()">
     </div>
-    <div class="field">
-      <label>面積（㎡）</label>
-      <input type="number" inputmode="decimal" id="area_sqm" placeholder="例：80" oninput="calcTanka()">
-    </div>
     <div class="result-grid" id="tanka-result" style="display:none">
-      <div class="result-item">
-        <span class="result-label">平米単価</span>
-        <span class="result-value big" id="r-sqm-price">—</span>
-      </div>
       <div class="result-item">
         <span class="result-label">坪単価</span>
         <span class="result-value big" id="r-tsubo-price">—</span>
       </div>
       <div class="result-item">
-        <span class="result-label">面積（坪換算）</span>
-        <span class="result-value" id="r-tsubo-area">—</span>
+        <span class="result-label">㎡単価</span>
+        <span class="result-value" id="r-sqm-price">—</span>
       </div>
     </div>
+
+    <hr class="divider">
+    <div class="field">
+      <label>坪単価から価格を出す（万円/坪）</label>
+      <input type="number" inputmode="decimal" id="tk-unit" placeholder="例：120" oninput="calcTanka()">
+    </div>
+    <div class="result-grid" id="tk-rev-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label" id="tk-rev-label">この坪単価での価格</span>
+        <span class="result-value big" id="tk-rev">—</span>
+      </div>
+    </div>
+    <button class="link-btn" id="tk-to-price" style="display:none" onclick="useTankaPrice()">この価格を「価格」に入れる（ほかのタブにも入る）↑</button>
+    <div class="note">面積は㎡と坪のどちらに入れても、もう片方が自動で入る。1坪＝3.30579㎡。価格は、ほかのタブの物件価格と連動している。</div>
   </div>
 
   <div class="card">
@@ -1971,33 +1972,46 @@ function fmtMan(n) {
   return Math.round(n).toLocaleString() + '万円';
 }
 
-// 平米坪変換
+// 面積（㎡ ⇔ 坪）
 function convertArea(from) {
   const sqm = document.getElementById('sqm');
   const tsubo = document.getElementById('tsubo');
-  if (from === 'sqm' && sqm.value) {
-    tsubo.value = (parseFloat(sqm.value) / 3.30579).toFixed(2);
-    document.getElementById('area_sqm').value = sqm.value;
-    calcTanka();
-  } else if (from === 'tsubo' && tsubo.value) {
-    sqm.value = (parseFloat(tsubo.value) * 3.30579).toFixed(2);
-    document.getElementById('area_sqm').value = sqm.value;
-    calcTanka();
+  if (from === 'sqm') {
+    tsubo.value = sqm.value === '' ? '' : (parseFloat(sqm.value) / 3.30579).toFixed(2);
+  } else {
+    sqm.value = tsubo.value === '' ? '' : (parseFloat(tsubo.value) * 3.30579).toFixed(2);
+  }
+  calcTanka();
+}
+
+// 単価
+function calcTanka() {
+  const price = num('price');
+  const area = num('sqm');
+  // 坪の欄に入っている数字をそのまま使う（㎡からの換算で端数が出ないように）
+  const tsuboArea = num('tsubo') || area / 3.30579;
+  show('tanka-result', !!(price && area), 'grid');
+  if (price && area) {
+    document.getElementById('r-tsubo-price').textContent = (price / tsuboArea).toFixed(2) + '万円/坪';
+    document.getElementById('r-sqm-price').textContent = (price / area).toFixed(2) + '万円/㎡';
+  }
+  // 坪単価から価格
+  const unit = num('tk-unit');
+  show('tk-rev-result', !!(unit && area), 'grid');
+  show('tk-to-price', !!(unit && area), 'block');
+  if (unit && area) {
+    document.getElementById('tk-rev-label').textContent = '坪' + unit.toLocaleString('ja-JP') + '万円 × ' + tsuboArea.toFixed(2) + '坪';
+    document.getElementById('tk-rev').textContent = man(Math.round(unit * tsuboArea * 10) / 10);
   }
 }
 
-// 単価計算
-function calcTanka() {
-  const price = parseFloat(document.getElementById('price').value);
-  const area = parseFloat(document.getElementById('area_sqm').value);
-  if (!price || !area) return;
-  const tsuboArea = area / 3.30579;
-  const sqmPrice = price / area;
-  const tsuboPrice = price / tsuboArea;
-  document.getElementById('r-sqm-price').textContent = sqmPrice.toFixed(2) + '万円/㎡';
-  document.getElementById('r-tsubo-price').textContent = tsuboPrice.toFixed(2) + '万円/坪';
-  document.getElementById('r-tsubo-area').textContent = tsuboArea.toFixed(2) + '坪';
-  document.getElementById('tanka-result').style.display = 'grid';
+function useTankaPrice() {
+  const v = Math.round(num('tk-unit') * (num('tsubo') || num('sqm') / 3.30579) * 10) / 10;
+  if (!v) return;
+  const el = document.getElementById('price');
+  el.value = v;
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+  showToast('価格 ' + v.toLocaleString('ja-JP') + '万円 を入れました');
 }
 
 // ===== 一棟収益 =====
@@ -3180,8 +3194,9 @@ function tabText(tab) {
 // ['h', 見出し] / ['i', 入力id, 名前, 単位] / ['o', 結果id, 名前] / ['tb', 表のtbody id, 表の名前]
 const SUMMARY = {
   tanka: [
-    ['i', 'sqm', '面積', '㎡'], ['o', 'r-tsubo-area', '坪数'], ['i', 'price', '価格', '万円'],
+    ['i', 'sqm', '面積', '㎡'], ['i', 'tsubo', '面積（坪）', '坪'], ['i', 'price', '価格', '万円'],
     ['o', 'r-tsubo-price', '坪単価'], ['o', 'r-sqm-price', '㎡単価'],
+    ['i', 'tk-unit', '想定の坪単価', '万円/坪'], ['o', 'tk-rev', '坪単価からの価格'],
     ['h', '賃料の坪単価'], ['i', 'rt-rent', '月額賃料', '円'], ['i', 'rt-kyoeki', '管理費・共益費', '円'], ['i', 'rt-area', '専有面積', '㎡'],
     ['o', 'rt-tsubo', '賃料の坪単価'], ['o', 'rt-tsubo-all', '管理費込みの坪単価'], ['o', 'rt-sqm', '㎡単価'], ['o', 'rt-year', '年額'],
     ['i', 'rt-unit', '想定の坪単価', '円/坪'], ['o', 'rt-rev', '想定坪単価での月額賃料'],
@@ -3617,7 +3632,6 @@ const LINKED = [
   ['l-years', 'cf-years', 'it-years'],
   ['cf-cost', 'it-cost'],                                                     // 購入諸費用                                                    // 返済期間
   ['t-bldprice', 'cf-bld'],                                                   // 建物価格
-  ['sqm', 'area_sqm'],                                                        // 面積（㎡）
 ];
 const linkOf = {};
 LINKED.forEach(group => group.forEach(id => {
@@ -3685,10 +3699,6 @@ document.addEventListener('input', e => {
   group.forEach(id => {
     if (id !== e.target.id) document.getElementById(id).value = e.target.value;
   });
-  if (group.includes('sqm')) {
-    const v = parseFloat(e.target.value);
-    document.getElementById('tsubo').value = isNaN(v) ? '' : (v / 3.30579).toFixed(2);
-  }
   deriveFrom(e.target.id);
   recalcAll();
 }, true);
