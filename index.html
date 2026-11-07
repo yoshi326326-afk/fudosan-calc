@@ -675,8 +675,8 @@ color: var(--gold);
         <span class="result-value big" id="rt-rev">—</span>
       </div>
     </div>
-    <button class="link-btn" id="rt-to-rent" style="display:none" onclick="sendRentUnit()">年間家賃として「利回り・収支・転売」に入れる →</button>
-    <div class="note">1坪＝3.30579㎡。坪単価＝月額賃料÷専有面積（坪）。月額賃料が空欄で想定の坪単価を入れた場合は、その月額で年間家賃を入れる。一棟なら、全室の賃料の合計と延床（または賃貸面積の合計）を入れる。</div>
+    <button class="link-btn" id="rt-to-rent" style="display:none" onclick="sendRentUnit()">管理費込み・想定坪単価の賃料を「利回り・収支・転売」に入れる →</button>
+    <div class="note">月額賃料は、利回り・収支・転売の月額家賃と自動で連動する（緑の欄）。管理費・共益費も家賃収入に含めたいときや、想定の坪単価で出した賃料を使いたいときは、下のボタンで入れる。1坪＝3.30579㎡。坪単価＝月額賃料÷専有面積（坪）。一棟なら、全室の賃料の合計と延床（または賃貸面積の合計）を入れる。</div>
   </div>
 </div>
 
@@ -1782,7 +1782,8 @@ function sendRentUnit() {
   if (!monthly) return;
   const annual = Math.round(monthly * 12 / 1000) / 10; // 万円
   ['r-rent', 'inv-rent', 'cf-gpi', 'tb-rent'].forEach(id => setValue(id, annual));
-  deriveFrom('r-rent');
+  // 月額家賃も合わせる（単価タブの賃料欄は管理費抜きのまま残す）
+  ['r-mrent', 'cf-mrent', 'tb-mrent'].forEach(id => setValue(id, Math.round(monthly)));
   recalcAll();
   saveState();
   showToast('年間家賃 ' + annual + '万円 を入れました');
@@ -3118,7 +3119,7 @@ const LINKED = [
   ['tb-reform', 'pj-reform'],                                                 // リフォーム費用
   ['tb-months', 'pj-months'],                                                 // 保有期間
   ['r-rent', 'inv-rent', 'cf-gpi', 'tb-rent'],
-  ['r-mrent', 'cf-mrent', 'tb-mrent'],                                         // 月額家賃（円）
+  ['r-mrent', 'cf-mrent', 'tb-mrent', 'rt-rent'],                                         // 月額家賃（円）
   ['r-kanri', 'cf-kanri'],                                                    // 管理費（円/月）
   ['r-shuzen', 'cf-shuzen'],                                                  // 修繕積立金（円/月）
   ['r-other', 'cf-other'],                                                    // その他の年間経費
@@ -3145,7 +3146,7 @@ LINKED.forEach(group => group.forEach(id => {
 
 // 月額と年額をつなぐ：月額を入れたら年額、年額を入れたら月額を自動で入れる
 const RENT_ANNUAL = ['r-rent', 'inv-rent', 'cf-gpi', 'tb-rent'];
-const RENT_MONTHLY = ['r-mrent', 'cf-mrent', 'tb-mrent'];
+const RENT_MONTHLY = ['r-mrent', 'cf-mrent', 'tb-mrent', 'rt-rent'];
 const COST_PARTS = ['r-kanri', 'r-shuzen', 'r-other'];
 
 function setGroup(ids, v) { ids.forEach(id => setValue(id, v)); }
