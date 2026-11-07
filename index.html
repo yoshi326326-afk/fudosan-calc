@@ -74,8 +74,8 @@ margin-top: 2px;
 
 .tabs {
 display: grid;
-grid-template-columns: repeat(4, 1fr);
-gap: 6px;
+grid-template-columns: repeat(5, 1fr);
+gap: 5px;
 padding: 8px 16px 10px;
 background: var(--surface);
 border-bottom: 1px solid var(--border);
@@ -170,9 +170,11 @@ text-align: center;
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 .tab {
-padding: 9px 2px;
+padding: 9px 0;
 border-radius: 10px;
-font-size: 12px;
+font-size: 11.5px;
+letter-spacing: -0.02em;
+font-family: inherit;
 text-align: center;
 min-width: 0;
 font-weight: 500;
@@ -182,6 +184,11 @@ color: var(--text2);
 cursor: pointer;
 transition: all 0.2s;
 white-space: nowrap;
+}
+
+@media (max-width: 360px) {
+  .tabs { padding: 8px 10px 10px; gap: 4px; }
+  .tab { font-size: 10px; letter-spacing: -0.06em; }
 }
 
 .tab.active {
@@ -381,6 +388,7 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
   <button class="tab" data-tab="shohi" onclick="switchTab('shohi')">諸費用</button>
   <button class="tab" data-tab="taiyo" onclick="switchTab('taiyo')">耐用年数</button>
   <button class="tab" data-tab="tenbai" onclick="switchTab('tenbai')">転売</button>
+  <button class="tab" data-tab="pj" onclick="switchTab('pj')">PJローン</button>
   <button class="tab" data-tab="cf" onclick="switchTab('cf')">収支・売却</button>
   <button class="tab" data-tab="sekisan" onclick="switchTab('sekisan')">積算</button>
   <div class="link-legend"><b>🔗 緑の欄</b>は全タブ連動。1か所に入れればほかのタブにも入る</div>
@@ -759,7 +767,127 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
   </div>
 
   <div class="card">
-    <div class="card-title"><span>🏦</span>プロジェクトローン</div>
+    <div class="card-title"><span>🎯</span>必要な販売価格</div>
+    <div class="row2">
+      <div class="field">
+        <label>目標の利益率（%）</label>
+        <input type="number" inputmode="decimal" id="tb-target" placeholder="例：15" oninput="calcTenbai()">
+      </div>
+      <div class="field">
+        <label>建物の割合（販売価格の%）</label>
+        <input type="number" inputmode="decimal" id="tb-bld-ratio" placeholder="例：25" oninput="calcTenbai()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>販売の仲介手数料</label>
+        <select id="tb-sell-fee" onchange="calcTenbai()">
+          <option value="yes">あり（上限）</option>
+          <option value="no">なし（自社販売）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>控除できる仕入の消費税（万円）</label>
+        <input type="number" inputmode="decimal" id="tb-input-tax" placeholder="例：0" oninput="calcTenbai()">
+      </div>
+    </div>
+    <div class="field">
+      <label>販売時のその他経費（広告・印紙など／万円）</label>
+      <input type="number" inputmode="decimal" id="tb-sell-other" placeholder="例：10" oninput="calcTenbai()">
+    </div>
+
+    <div class="result-grid" id="tb-need-result" style="display:none">
+      <div class="result-item" id="tb-need-row">
+        <span class="result-label" id="tb-need-label">目標の利益率に必要な販売価格（税込）</span>
+        <span class="result-value big" id="tb-need-sell">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">これ以下だと赤字（損益ゼロの販売価格・税込）</span>
+        <span class="result-value" id="tb-be-sell" style="color:#e57373">—</span>
+      </div>
+      <div class="result-item" id="tb-need-up-row">
+        <span class="result-label">仕入価格に対して</span>
+        <span class="result-value" id="tb-need-up">—</span>
+      </div>
+    </div>
+    <div class="note">利益率は、販売価格（税抜）に対する粗利の割合。建物の割合は、税込の販売価格のうち建物が占める割合（建物部分に消費税がかかる。土地だけなら空欄）。融資の条件は「PJローン」タブで入れると、金利と手数料もここに反映される。</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🏷️</span>販売予定価格で確認</div>
+    <div class="field">
+      <label>販売予定価格・税込（万円）</label>
+      <input type="number" inputmode="decimal" id="tb-sell" placeholder="例：4200" oninput="calcTenbai()">
+    </div>
+    <div class="result-grid" id="tb-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">粗利（税引前）</span>
+        <span class="result-value big" id="tb-profit">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">利益率（対販売価格・税抜）</span>
+        <span class="result-value big green" id="tb-margin">—</span>
+      </div>
+      <div class="result-item" id="tb-gap-row" style="display:none">
+        <span class="result-label">目標に対して</span>
+        <span class="result-value" id="tb-gap">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">自己資金</span>
+        <span class="result-value" id="tb-equity">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">自己資金に対する利益率（年換算）</span>
+        <span class="result-value" id="tb-roe">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="tb-detail-card" style="display:none">
+    <div class="card-title"><span>🧾</span>費用の内訳</div>
+    <div class="note" id="tb-detail-note" style="margin:0 0 8px"></div>
+    <table>
+      <thead><tr><th>項目</th><th>金額</th></tr></thead>
+      <tbody id="tb-table"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🔄</span>仕入上限の逆算</div>
+    <div class="note" style="margin:0 0 8px">販売予定価格と目標の利益率を入れると、いくらまでなら仕入れられるかを出す。</div>
+    <div class="result-grid" id="tb-inv-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">この価格までなら仕入れられる</span>
+        <span class="result-value big" id="tb-max-buy">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- タブ：PJローン -->
+
+<div id="tab-pj" class="tab-content">
+  <div class="card">
+    <div class="card-title"><span>🏗️</span>対象の案件</div>
+    <div class="row2">
+      <div class="field">
+        <label>仕入価格（万円）</label>
+        <input type="number" inputmode="decimal" id="pj-buy" placeholder="例：3000" oninput="calcTenbai()">
+      </div>
+      <div class="field">
+        <label>リフォーム費用（万円）</label>
+        <input type="number" inputmode="decimal" id="pj-reform" placeholder="例：300" oninput="calcTenbai()">
+      </div>
+    </div>
+    <div class="field">
+      <label>保有期間（ヶ月）</label>
+      <input type="number" inputmode="decimal" id="pj-months" placeholder="空欄なら6" oninput="calcTenbai()">
+    </div>
+    <div class="note">この3つは「転売」タブと連動している。評価額・経費・販売の条件は「転売」タブで入れる。</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🏦</span>融資の条件</div>
     <div class="row2">
       <div class="field">
         <label>融資の対象</label>
@@ -787,60 +915,28 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
       <label>融資期間（ヶ月）※この月までに売って返す</label>
       <input type="number" inputmode="decimal" id="tb-loan-term" placeholder="例：12" oninput="calcTenbai()">
     </div>
-    <div class="note">利息は保有期間中の分だけ計算し、元本は売却代金で一括返済する想定（期日一括返済）。金融機関によっては毎月利息を払う方式や、手数料が別にかかる場合がある。</div>
-  </div>
+    <div class="note">利息は保有期間中の分だけ計算し、元本は売却代金で一括返済する想定（期日一括返済）。利息を毎月払う方式でも先取りの方式でも、総額はほぼ同じ。</div>
 
-  <div class="card">
-    <div class="card-title"><span>🏷️</span>販売</div>
-    <div class="row2">
-      <div class="field">
-        <label>販売価格・税込（万円）</label>
-        <input type="number" inputmode="decimal" id="tb-sell" placeholder="例：4200" oninput="calcTenbai()">
-      </div>
-      <div class="field">
-        <label>うち建物・税込（万円）</label>
-        <input type="number" inputmode="decimal" id="tb-sell-bld" placeholder="例：1100" oninput="calcTenbai()">
-      </div>
-    </div>
-    <div class="row2">
-      <div class="field">
-        <label>販売の仲介手数料</label>
-        <select id="tb-sell-fee" onchange="calcTenbai()">
-          <option value="yes">あり（上限）</option>
-          <option value="no">なし（自社販売）</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>控除できる仕入の消費税（万円）</label>
-        <input type="number" inputmode="decimal" id="tb-input-tax" placeholder="0" oninput="calcTenbai()">
-      </div>
-    </div>
-    <div class="field">
-      <label>販売時のその他経費（広告・印紙など／万円）</label>
-      <input type="number" inputmode="decimal" id="tb-sell-other" placeholder="例：10" oninput="calcTenbai()">
-    </div>
-    <div class="note">消費税の納税額＝建物部分（税込）×10/110−控除できる仕入の消費税。個人から仕入れた場合、仕入に消費税はかからない。居住用の賃貸物件は仕入の消費税を控除できない場合があるから、税理士に確認すること。</div>
-
-    <div class="result-grid" id="tb-result" style="display:none">
+    <div class="result-grid" id="pj-result" style="display:none">
       <div class="result-item">
-        <span class="result-label">粗利（税引前）</span>
-        <span class="result-value big" id="tb-profit">—</span>
-      </div>
-      <div class="result-item">
-        <span class="result-label">利益率（対販売価格・税抜）</span>
-        <span class="result-value big green" id="tb-margin">—</span>
-      </div>
-      <div class="result-item">
-        <span class="result-label">自己資金</span>
-        <span class="result-value" id="tb-equity">—</span>
-      </div>
-      <div class="result-item">
-        <span class="result-label">自己資金に対する利益率（年換算）</span>
-        <span class="result-value" id="tb-roe">—</span>
-      </div>
-      <div class="result-item" id="tb-loan-row" style="display:none">
         <span class="result-label">借入額</span>
-        <span class="result-value" id="tb-loan">—</span>
+        <span class="result-value big" id="pj-loan">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">事務手数料</span>
+        <span class="result-value" id="pj-fee">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">保有期間中の利息</span>
+        <span class="result-value" id="pj-interest">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">月々の利息（毎月払いの場合）</span>
+        <span class="result-value" id="pj-monthly">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">売れるまでに必要な自己資金</span>
+        <span class="result-value big green" id="pj-equity">—</span>
       </div>
       <div class="result-item" id="tb-warn-row" style="display:none">
         <span class="result-label">⚠️ 期日</span>
@@ -849,36 +945,14 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
     </div>
   </div>
 
-  <div class="card" id="tb-detail-card" style="display:none">
-    <div class="card-title"><span>🧾</span>費用の内訳</div>
-    <table>
-      <thead><tr><th>項目</th><th>金額</th></tr></thead>
-      <tbody id="tb-table"></tbody>
-    </table>
-  </div>
-
   <div class="card" id="tb-stress-card" style="display:none">
     <div class="card-title"><span>🧪</span>売れなかったときの試算</div>
+    <div class="note" id="pj-base-note" style="margin:0 0 8px"></div>
     <table>
       <thead><tr><th>ケース</th><th>粗利</th><th>利益率</th></tr></thead>
       <tbody id="tb-stress"></tbody>
     </table>
     <div class="note">販売価格の値下げと、販売が長引いたとき（金利・保有経費が増える）の利益。プロジェクトローンは売却代金で返すので、ここで赤字にならないかを見ておくと安全。融資期間を超えるケースは「期日超過」と表示する。</div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span>🔄</span>仕入上限の逆算</div>
-    <div class="field">
-      <label>目標の利益率（対販売価格・税抜 %）</label>
-      <input type="number" inputmode="decimal" id="tb-target" placeholder="例：15" oninput="calcTenbai()">
-    </div>
-    <div class="result-grid" id="tb-inv-result" style="display:none">
-      <div class="result-item">
-        <span class="result-label">この価格までなら仕入れられる</span>
-        <span class="result-value big" id="tb-max-buy">—</span>
-      </div>
-    </div>
-    <div class="note">販売価格と、仕入価格以外の入力（評価額・リフォーム・融資割合など）はそのままにして計算する。</div>
   </div>
 </div>
 
@@ -1394,7 +1468,7 @@ function calcTaiyo() {
 // ===== 売買の共通部品 =====
 // 空欄のときに使う目安の数字（画面には「空欄なら○」と表示）
 const DEFAULTS = {
-  'tb-land-reg': 1.5, 'tb-months': 6,
+  'tb-land-reg': 1.5, 'tb-months': 6, 'pj-months': 6,
   'cf-vac': 5, 'cf-opex': 20, 'cf-decline': 1, 'cf-hold': 10, 'cf-corp-tax': 34,
   'sk-adj': 100, 'sk-share': 100,
 };
@@ -1430,9 +1504,8 @@ function tenbaiProfit(buy, opt = {}) {
   const bldEval = num('tb-bld-eval');
   const baseMonths = num('tb-months');
   const months = opt.months ?? baseMonths;
-  const baseSell = num('tb-sell');
-  const sell = opt.sell ?? baseSell;
-  const sellBld = baseSell > 0 ? Math.min(num('tb-sell-bld'), baseSell) * sell / baseSell : 0;
+  const sell = opt.sell ?? num('tb-sell');
+  const sellBld = sell * Math.min(num('tb-bld-ratio'), 100) / 100;
 
   const items = [];
   const buyFee = document.getElementById('tb-buy-fee').value === 'yes' ? chukaiFee(buy) : 0;
@@ -1477,75 +1550,120 @@ function tenbaiProfit(buy, opt = {}) {
   const profit = sell - buy - cost;
   // 売却までに出ていくお金から借入を引いたもの
   const equity = buy + buyFee + reg + acq + buyOther + reform + loanFee + interest + hold - loan;
-  return { items, profit, salesExTax, equity, months, loan };
+  return { items, profit, salesExTax, equity, months, loan, loanFee, interest, sell };
+}
+
+// 目標の利益率を取るのに必要な販売価格（税込）。target は 0.15 のような割合
+function requiredSell(buy, target, opt = {}) {
+  const gap = s => {
+    const r = tenbaiProfit(buy, { ...opt, sell: s });
+    return r.profit - target * r.salesExTax;
+  };
+  let hi = Math.max(buy, 100) * 2;
+  for (let i = 0; i < 20 && gap(hi) < 0; i++) hi *= 2;
+  if (gap(hi) < 0) return null;
+  let lo = 0;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    if (gap(mid) >= 0) hi = mid; else lo = mid;
+  }
+  return hi;
+}
+
+function show(id, on, type = 'flex') {
+  document.getElementById(id).style.display = on ? type : 'none';
 }
 
 function calcTenbai() {
   const buy = num('tb-buy');
-  const sell = num('tb-sell');
-  if (!buy || !sell) return;
-
-  const r = tenbaiProfit(buy);
-  document.getElementById('tb-profit').textContent = man(r.profit);
-  document.getElementById('tb-margin').textContent = r.salesExTax > 0 ? pct(r.profit / r.salesExTax, 1) : '—';
-  document.getElementById('tb-equity').textContent = man(r.equity);
-  if (r.equity > 0 && r.months > 0) {
-    document.getElementById('tb-roe').textContent =
-      pct(r.profit / r.equity, 1) + '（年 ' + pct(r.profit / r.equity * 12 / r.months, 1) + '）';
-  } else {
-    document.getElementById('tb-roe').textContent = '—';
-  }
-  document.getElementById('tb-result').style.display = 'grid';
-
-  // プロジェクトローンの表示
-  const term = num('tb-loan-term');
-  document.getElementById('tb-loan-row').style.display = r.loan > 0 ? 'flex' : 'none';
-  document.getElementById('tb-loan').textContent = man(r.loan);
-  const over = r.loan > 0 && term > 0 && r.months > term;
-  document.getElementById('tb-warn-row').style.display = over ? 'flex' : 'none';
-  document.getElementById('tb-warn').textContent = over ? '保有期間が融資期間を' + (r.months - term) + 'ヶ月超えている' : '';
-
-  // 売れなかったときの試算
+  if (!buy) return;
+  const sellIn = num('tb-sell');
+  const targetIn = document.getElementById('tb-target').value;
+  const target = num('tb-target') / 100;
   const base = num('tb-months');
-  const cases = [
-    ['予定どおり', {}],
-    ['価格 −5%', { sell: sell * 0.95 }],
-    ['価格 −10%', { sell: sell * 0.9 }],
-    ['販売 +3ヶ月', { months: base + 3 }],
-    ['販売 +6ヶ月', { months: base + 6 }],
-    ['−10% かつ +6ヶ月', { sell: sell * 0.9, months: base + 6 }],
-  ];
-  document.getElementById('tb-stress').innerHTML = cases.map(([label, opt]) => {
-    const c = tenbaiProfit(buy, opt);
-    const late = r.loan > 0 && term > 0 && c.months > term ? '（期日超過）' : '';
-    const color = c.profit < 0 ? ' style="color:#e57373"' : '';
-    return `<tr><td>${label}${late}</td><td${color}>${man(c.profit)}</td><td${color}>${c.salesExTax > 0 ? pct(c.profit / c.salesExTax, 1) : '—'}</td></tr>`;
-  }).join('');
-  document.getElementById('tb-stress-card').style.display = 'block';
+
+  // 必要な販売価格（販売価格を入れなくても出す）
+  const need = targetIn ? requiredSell(buy, target) : null;
+  const be = requiredSell(buy, 0);
+  show('tb-need-row', !!targetIn);
+  document.getElementById('tb-need-label').textContent = '利益率' + num('tb-target') + '%に必要な販売価格（税込）';
+  document.getElementById('tb-need-sell').textContent = need === null ? (targetIn ? '届かない' : '—') : man(Math.ceil(need * 10) / 10);
+  document.getElementById('tb-be-sell').textContent = be === null ? '—' : man(Math.ceil(be * 10) / 10);
+  const ref = need ?? be;
+  document.getElementById('tb-need-up').textContent = ref ? '+' + man(Math.round((ref - buy) * 10) / 10) + '（' + pct(ref / buy, 1) + '）' : '—';
+  show('tb-need-result', true, 'grid');
+
+  // 販売予定価格での確認（なければ必要な販売価格で内訳を出す）
+  const sellUse = sellIn || need || be;
+  const r = tenbaiProfit(buy, { sell: sellUse });
+  show('tb-result', !!sellIn, 'grid');
+  if (sellIn) {
+    document.getElementById('tb-profit').textContent = man(r.profit);
+    document.getElementById('tb-margin').textContent = r.salesExTax > 0 ? pct(r.profit / r.salesExTax, 1) : '—';
+    document.getElementById('tb-equity').textContent = man(r.equity);
+    document.getElementById('tb-roe').textContent = r.equity > 0 && r.months > 0
+      ? pct(r.profit / r.equity, 1) + '（年 ' + pct(r.profit / r.equity * 12 / r.months, 1) + '）' : '—';
+    show('tb-gap-row', !!targetIn && need !== null);
+    if (targetIn && need !== null) {
+      const diff = sellIn - need;
+      const el = document.getElementById('tb-gap');
+      el.textContent = diff >= 0 ? '目標達成（+' + man(Math.round(diff * 10) / 10) + '）' : 'あと ' + man(Math.round(-diff * 10) / 10) + ' 足りない';
+      el.style.color = diff >= 0 ? 'var(--success)' : '#e57373';
+    }
+  }
 
   const total = r.items.reduce((s, [, v]) => s + v, 0);
+  document.getElementById('tb-detail-note').textContent = '販売価格 ' + man(Math.round(sellUse * 10) / 10) + (sellIn ? '（販売予定価格）' : '（必要な販売価格）') + 'で計算';
   document.getElementById('tb-table').innerHTML =
     `<tr><td>仕入価格</td><td>${man(buy)}</td></tr>` +
     r.items.map(([label, v]) => `<tr><td>${label}</td><td>${man(v)}</td></tr>`).join('') +
     `<tr class="highlight"><td>費用の合計（仕入価格を除く）</td><td>${man(total)}</td></tr>`;
-  document.getElementById('tb-detail-card').style.display = 'block';
+  show('tb-detail-card', !!sellUse, 'block');
 
-  // 仕入上限の逆算（仕入価格が高いほど利益は減るので二分探索）
-  const target = num('tb-target') / 100;
-  const invBox = document.getElementById('tb-inv-result');
-  if (!document.getElementById('tb-target').value) { invBox.style.display = 'none'; return; }
-  const goal = r.salesExTax * target;
-  let lo = 0, hi = sell;
-  if (tenbaiProfit(0).profit < goal) {
-    document.getElementById('tb-max-buy').textContent = 'この条件では届かない';
-  } else {
-    for (let i = 0; i < 60; i++) {
-      const mid = (lo + hi) / 2;
-      if (tenbaiProfit(mid).profit >= goal) lo = mid; else hi = mid;
+  // 仕入上限の逆算（販売予定価格と目標が必要）
+  if (sellIn && targetIn) {
+    const goal = b => { const c = tenbaiProfit(b, { sell: sellIn }); return c.profit - target * c.salesExTax; };
+    let lo = 0, hi = sellIn;
+    if (goal(0) < 0) {
+      document.getElementById('tb-max-buy').textContent = 'この条件では届かない';
+    } else {
+      for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (goal(mid) >= 0) lo = mid; else hi = mid; }
+      document.getElementById('tb-max-buy').textContent = man(Math.floor(lo * 10) / 10);
     }
-    document.getElementById('tb-max-buy').textContent = man(Math.floor(lo * 10) / 10);
   }
-  invBox.style.display = 'grid';
+  show('tb-inv-result', !!(sellIn && targetIn), 'grid');
+
+  // ===== PJローン =====
+  const term = num('tb-loan-term');
+  show('pj-result', r.loan > 0, 'grid');
+  document.getElementById('pj-loan').textContent = man(r.loan);
+  document.getElementById('pj-fee').textContent = man(r.loanFee);
+  document.getElementById('pj-interest').textContent = man(r.interest) + '（' + r.months + 'ヶ月）';
+  document.getElementById('pj-monthly').textContent = man(r.loan * num('tb-rate') / 100 / 12);
+  document.getElementById('pj-equity').textContent = man(r.equity);
+  const over = r.loan > 0 && term > 0 && r.months > term;
+  show('tb-warn-row', over);
+  document.getElementById('tb-warn').textContent = over ? '保有期間が融資期間を' + (r.months - term) + 'ヶ月超えている' : '';
+
+  // 売れなかったときの試算
+  if (sellUse) {
+    document.getElementById('pj-base-note').textContent = '基準の販売価格：' + man(Math.round(sellUse * 10) / 10) + (sellIn ? '（販売予定価格）' : '（必要な販売価格）');
+    const cases = [
+      ['予定どおり', {}],
+      ['価格 −5%', { sell: sellUse * 0.95 }],
+      ['価格 −10%', { sell: sellUse * 0.9 }],
+      ['販売 +3ヶ月', { months: base + 3 }],
+      ['販売 +6ヶ月', { months: base + 6 }],
+      ['−10% かつ +6ヶ月', { sell: sellUse * 0.9, months: base + 6 }],
+    ];
+    document.getElementById('tb-stress').innerHTML = cases.map(([label, opt]) => {
+      const c = tenbaiProfit(buy, { sell: sellUse, ...opt });
+      const late = r.loan > 0 && term > 0 && c.months > term ? '（期日超過）' : '';
+      const color = c.profit < 0 ? ' style="color:#e57373"' : '';
+      return `<tr><td>${label}${late}</td><td${color}>${man(c.profit)}</td><td${color}>${c.salesExTax > 0 ? pct(c.profit / c.salesExTax, 1) : '—'}</td></tr>`;
+    }).join('');
+  }
+  show('tb-stress-card', !!sellUse, 'block');
 }
 
 // ===== 収支と売却シミュレーション =====
@@ -1851,7 +1969,9 @@ function sendShohi() {
 
 // 同じ意味の欄は、どこか1か所に入れると全タブに反映する
 const LINKED = [
-  ['price', 'r-price', 's-price', 'c-price', 'cf-price', 'sk-price', 'tb-buy'], // 物件価格
+  ['price', 'r-price', 's-price', 'c-price', 'cf-price', 'sk-price', 'tb-buy', 'pj-buy'], // 物件価格
+  ['tb-reform', 'pj-reform'],                                                 // リフォーム費用
+  ['tb-months', 'pj-months'],                                                 // 保有期間
   ['r-rent', 'inv-rent', 'cf-gpi'],                                           // 年間家賃
   ['r-cost', 'inv-cost'],                                                     // 年間経費
   ['l-amount', 's-loan', 'cf-loan'],                                          // 借入金額
