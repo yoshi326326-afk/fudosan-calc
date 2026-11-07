@@ -76,7 +76,7 @@ margin-top: 2px;
 display: grid;
 grid-template-columns: repeat(4, 1fr);
 gap: 5px;
-padding: 8px 16px 10px;
+padding: 8px 16px;
 background: var(--surface);
 border-bottom: 1px solid var(--border);
 position: sticky;
@@ -198,7 +198,7 @@ text-align: center;
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 .tab {
-padding: 9px 0;
+padding: 8px 0;
 border-radius: 10px;
 font-size: 11.5px;
 letter-spacing: -0.02em;
@@ -320,9 +320,16 @@ border: 1px solid var(--border);
 border-radius: 10px;
 padding: 12px 14px;
 display: flex;
+flex-wrap: wrap;
 justify-content: space-between;
 align-items: center;
+column-gap: 12px;
+row-gap: 2px;
 }
+
+/* 数字が長いときは折り返して、見出しの下に右寄せで出す */
+.result-item .result-label { flex: 1 1 130px; }
+.result-item .result-value { margin-left: auto; text-align: right; }
 
 .result-label {
 font-size: 11px;
@@ -394,6 +401,33 @@ td {
 padding: 8px;
 border-bottom: 1px solid var(--border);
 font-family: 'DM Mono', monospace;
+}
+
+/* 表の数字は折り返さない。はみ出すときは表だけ横にスクロール */
+td:not(:first-child), th:not(:first-child) { white-space: nowrap; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -4px; padding: 0 4px; }
+.table-wrap table { min-width: 100%; }
+
+/* 長い説明は折りたたむ */
+details.note-d { margin-top: 8px; }
+details.note-d summary {
+cursor: pointer;
+list-style: none;
+font-size: 11px;
+color: var(--accent);
+display: inline-block;
+padding: 2px 0;
+}
+details.note-d summary::-webkit-details-marker { display: none; }
+details.note-d[open] summary { color: var(--text2); }
+details.note-d .note { margin-top: 4px; }
+
+/* タブの上の案件バー（スクロールで流れる） */
+.top-bar {
+background: var(--surface);
+padding: 10px 16px 0;
+display: grid;
+gap: 6px;
 }
 
 tr:last-child td { border-bottom: none; }
@@ -522,7 +556,8 @@ color: var(--gold);
 
 @media (min-width: 900px) {
   body { padding-bottom: 40px; }
-  header, .tabs, .tab-content { width: calc(100% - 48px); max-width: 1180px; margin-left: auto; margin-right: auto; }
+  header, .top-bar, .tabs, .tab-content { width: calc(100% - 48px); max-width: 1180px; margin-left: auto; margin-right: auto; }
+  .top-bar { padding: 10px 24px 0; border: 1px solid var(--border); border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; }
   header { padding: 18px 4px 12px; background: transparent; }
   header h1 { font-size: 20px; }
   header p { font-size: 12px; }
@@ -535,6 +570,7 @@ color: var(--gold);
     border: 1px solid var(--border);
     border-top: none;
     border-radius: 0 0 var(--radius) var(--radius);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
   }
   .tab { font-size: 13px; padding: 10px 0; letter-spacing: 0; cursor: pointer; }
   .link-legend { font-size: 12px; }
@@ -549,7 +585,7 @@ color: var(--gold);
 }
 
 @media (min-width: 1400px) {
-  header, .tabs, .tab-content { max-width: 1500px; }
+  header, .top-bar, .tabs, .tab-content { max-width: 1500px; }
   .tab-content.active { columns: 3; }
 }
 
@@ -563,7 +599,7 @@ color: var(--gold);
   <p>Professional Real Estate Calculator</p>
 </header>
 
-<div class="tabs">
+<div class="top-bar">
   <div class="proj-bar">
     <span class="proj-label">案件</span>
     <select id="proj-select" aria-label="案件を選ぶ"></select>
@@ -578,6 +614,10 @@ color: var(--gold);
       <button data-act="delete" class="danger">この案件を削除</button>
     </div>
   </div>
+  <div class="link-legend"><b>🔗 緑の欄</b>は全タブ連動。1か所に入れればほかのタブにも入る</div>
+</div>
+
+<div class="tabs">
   <button class="tab active" data-tab="tanka" onclick="switchTab('tanka')">単価・変換</button>
   <button class="tab" data-tab="rimawari" onclick="switchTab('rimawari')">利回り</button>
   <button class="tab" data-tab="loan" onclick="switchTab('loan')">ローン</button>
@@ -589,7 +629,6 @@ color: var(--gold);
   <button class="tab" data-tab="cf" onclick="switchTab('cf')">収支・売却</button>
   <button class="tab" data-tab="itto" onclick="switchTab('itto')">一棟収益</button>
   <button class="tab" data-tab="sekisan" onclick="switchTab('sekisan')">積算</button>
-  <div class="link-legend"><b>🔗 緑の欄</b>は全タブ連動。1か所に入れればほかのタブにも入る</div>
 </div>
 
 <!-- タブ1：単価・変換 -->
@@ -3687,6 +3726,23 @@ document.addEventListener('mouseup', e => {
   justFocused = null;
 });
 document.addEventListener('keydown', () => { justFocused = null; });
+
+// 表を横スクロールできる箱に入れる
+document.querySelectorAll('.tab-content table').forEach(t => {
+  const wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+  t.parentNode.insertBefore(wrap, t);
+  wrap.appendChild(t);
+});
+// 長い説明は「ⓘ 説明」で開くようにする（計算で中身が変わるものは除く）
+document.querySelectorAll('.tab-content .note').forEach(n => {
+  if (n.id || n.closest('details') || n.textContent.trim().length < 60) return;
+  const d = document.createElement('details');
+  d.className = 'note-d';
+  d.innerHTML = '<summary>ⓘ 説明を見る</summary>';
+  n.parentNode.insertBefore(d, n);
+  d.appendChild(n);
+});
 
 setupRentRoll();
 restoreState();
