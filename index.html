@@ -114,6 +114,19 @@ font-weight: 700;
 
 .btn-sub:active { opacity: 0.8; }
 
+.copy-opt {
+grid-column: 1 / -1;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+font-size: 12px;
+color: var(--text2);
+margin: 2px 0 0;
+cursor: pointer;
+}
+.copy-opt input { -webkit-appearance: checkbox; appearance: auto; width: 18px; height: 18px; margin: 0; padding: 0; flex: none; border: none; background: none; accent-color: var(--accent); }
+
 .link-btn {
 display: block;
 width: 100%;
@@ -2370,8 +2383,125 @@ function tabText(tab) {
   return lines.join('\n');
 }
 
+// ===== 要約コピー：タブごとに決めた項目だけ =====
+// ['h', 見出し] / ['i', 入力id, 名前, 単位] / ['o', 結果id, 名前] / ['tb', 表のtbody id, 表の名前]
+const SUMMARY = {
+  tanka: [
+    ['i', 'sqm', '面積', '㎡'], ['o', 'r-tsubo-area', '坪数'], ['i', 'price', '価格', '万円'],
+    ['o', 'r-tsubo-price', '坪単価'], ['o', 'r-sqm-price', '㎡単価'],
+  ],
+  rimawari: [
+    ['i', 'r-price', '物件価格', '万円'], ['i', 'r-rent', '年間家賃', '万円'], ['i', 'r-cost', '年間経費', '万円'],
+    ['o', 'r-hyomen', '表面利回り'], ['o', 'r-jissitu', '実質利回り'], ['o', 'r-monthly', '月額家賃'],
+    ['h', '購入価格の目安'], ['i', 'inv-yield', '目標利回り', '%'],
+    ['o', 'inv-price-hyomen', '表面利回りで見た価格'], ['o', 'inv-price-jissitu', '実質利回りで見た価格'],
+  ],
+  loan: [
+    ['i', 'l-amount', '借入金額', '万円'], ['i', 'l-rate', '金利', '%'], ['i', 'l-years', '返済期間', '年'],
+    ['o', 'l-monthly', '月々の返済'], ['o', 'l-yearly', '年間返済'], ['o', 'l-total', '総返済額'], ['o', 'l-interest', '利息の合計'],
+    ['tb', 'loan-balance-table', '残高の推移'],
+  ],
+  shohi: [
+    ['i', 's-price', '物件価格', '万円'], ['i', 's-type', '種別'], ['i', 's-loan', '借入金額', '万円'],
+    ['o', 's-total', '諸費用の合計（概算）'],
+    ['tb', 'shohi-table', '内訳'],
+  ],
+  chukai: [
+    ['i', 'c-price', '売買価格', '万円'], ['i', 'c-bld', '建物価格（税込）', '万円'], ['i', 'c-bld-tax', '建物の消費税', '万円'],
+    ['o', 'c-base', '計算に使う価格'], ['o', 'c-fee-tax', '仲介手数料の上限（税込）'], ['o', 'c-both', '両手の合計（税込）'],
+    ['tb', 'c-table', '計算の内訳'],
+  ],
+  taiyo: [
+    ['i', 't-structure', '構造'], ['i', 't-built', '竣工'], ['i', 't-bldprice', '建物価格', '万円'],
+    ['o', 't-remain', '耐用年数（中古）'], ['o', 't-rate', '償却率'], ['o', 't-depr', '年間の減価償却費'],
+  ],
+  tenbai: [
+    ['h', '仕入れ'], ['i', 'tb-buy', '仕入価格', '万円'], ['i', 'tb-reform', 'リフォーム', '万円'], ['i', 'tb-months', '保有期間', 'ヶ月'],
+    ['h', '販売価格の目安'], ['i', 'tb-target', '目標の利益率', '%'],
+    ['o', 'tb-need-sell', '必要な販売価格'], ['o', 'tb-be-sell', '赤字になる販売価格'],
+    ['h', '収益物件として売る場合'], ['i', 'tb-rent', '満室家賃', '万円'], ['i', 'tb-exit-yield', '買主の想定利回り', '%'],
+    ['o', 'tb-yield-sell', '売れる価格'], ['o', 'tb-yield-profit', 'その価格での粗利・利益率'], ['o', 'tb-need-yield', '必要な販売価格の利回り'],
+    ['h', '販売予定価格'], ['i', 'tb-sell', '販売予定価格', '万円'],
+    ['o', 'tb-profit', '粗利'], ['o', 'tb-margin', '利益率'], ['o', 'tb-gap', '目標に対して'], ['o', 'tb-max-buy', '仕入の上限'],
+    ['tb', 'tb-table', '費用の内訳'],
+  ],
+  pj: [
+    ['i', 'pj-buy', '仕入価格', '万円'], ['i', 'tb-loan-base', '融資の対象'], ['i', 'tb-ltv', '融資割合', '%'],
+    ['i', 'tb-rate', '金利', '%'], ['i', 'tb-loan-fee', '事務手数料', '%'], ['i', 'tb-loan-term', '融資期間', 'ヶ月'],
+    ['o', 'pj-loan', '借入額'], ['o', 'pj-interest', '保有期間中の利息'], ['o', 'pj-monthly', '月々の利息'],
+    ['o', 'pj-equity', '必要な自己資金'], ['o', 'tb-warn', '注意'],
+    ['tb', 'tb-stress', '売れなかったときの試算'],
+  ],
+  cf: [
+    ['h', '条件'], ['i', 'cf-price', '物件価格', '万円'], ['i', 'cf-cost', '購入諸費用', '万円'], ['i', 'cf-loan', '借入金額', '万円'],
+    ['i', 'cf-rate', '金利', '%'], ['i', 'cf-years', '返済期間', '年'], ['i', 'cf-gpi', '満室時の年間家賃', '万円'],
+    ['i', 'cf-vac', '空室率', '%'], ['i', 'cf-opex', '運営経費率', '%'],
+    ['h', '1年目の収支'], ['o', 'cf-btcf', '手残り（税引前）'], ['o', 'cf-dscr', '返済余裕率'], ['o', 'cf-ccr', '自己資金の利回り'],
+    ['o', 'cf-be-rate', '手残りがゼロになる金利'],
+    ['h', '売却したとき'], ['i', 'cf-hold', '保有年数', '年'], ['i', 'cf-exit-cap', '売却時の利回り', '%'],
+    ['o', 'cf-sale', '売却価格'], ['o', 'cf-sale-net', '売却での手残り'], ['o', 'cf-total', '投資全体の利益'], ['o', 'cf-irr', 'IRR'],
+    ['tb', 'cf-rate-table', '金利が上がったら'], ['tb', 'cf-table', '年別の収支'],
+  ],
+  sekisan: [
+    ['i', 'sk-land', '土地面積', '㎡'], ['i', 'sk-rosen', '路線価', '千円/㎡'], ['i', 'sk-structure', '構造'],
+    ['i', 'sk-floor', '延床面積', '㎡'], ['i', 'sk-age', '築年数', '年'], ['i', 'sk-price', '物件価格', '万円'],
+    ['o', 'sk-total', '積算評価'], ['o', 'sk-land-val', '土地'], ['o', 'sk-bld-val', '建物'], ['o', 'sk-ratio', '積算÷物件価格'],
+  ],
+};
+const INTERNAL_TABS = ['tenbai', 'pj'];
+const COPY_TABLES_KEY = 'fudosan-copy-tables';
+
+function copyWithTables() {
+  try { return localStorage.getItem(COPY_TABLES_KEY) === '1'; } catch (e) { return false; }
+}
+
+function summaryText(tab, withTables) {
+  const id = tab.id.replace('tab-', '');
+  const spec = SUMMARY[id];
+  if (!spec) return tabText(tab);
+  const out = [];
+  let pendingHead = null;
+  const push = line => {
+    if (pendingHead) { out.push('', '■' + pendingHead); pendingHead = null; }
+    out.push(line);
+  };
+  let hasResult = false;
+  spec.forEach(([type, key, label, unit]) => {
+    if (type === 'h') { pendingHead = key; return; }
+    const el = document.getElementById(key);
+    if (!el || hiddenIn(el, tab)) return;
+    if (type === 'i') {
+      let v = el.tagName === 'SELECT' ? el.selectedOptions[0].text : el.value;
+      if (el.tagName !== 'SELECT' && v === '') {
+        if (DEFAULTS[key] === undefined) return;
+        v = DEFAULTS[key] + (unit || '') + '（目安）';
+      } else if (el.tagName !== 'SELECT') {
+        v = (el.type === 'number' ? Number(v).toLocaleString('ja-JP') : v) + (unit || '');
+      }
+      push('・' + label + '：' + v);
+    } else if (type === 'o') {
+      const v = el.textContent.trim();
+      if (!v || v === '—') return;
+      hasResult = true;
+      push('▶ ' + label + '：' + v);
+    } else if (type === 'tb' && withTables) {
+      if (!el.rows.length) return;
+      const head = [...el.closest('table').querySelectorAll('thead th')].map(th => th.textContent.trim());
+      push('');
+      push('［' + label + '］' + (head.length ? head.join(' / ') : ''));
+      [...el.rows].forEach(tr => push('　' + [...tr.cells].map(c => c.textContent.trim()).join(' / ')));
+    }
+  });
+  if (!hasResult) return '';
+  const title = '【' + TAB_NAMES[id] + (INTERNAL_TABS.includes(id) ? '・社内用' : '') + '】';
+  const p = store.projects[store.current];
+  // 「案件1」のような自動の名前は付けない
+  const name = p && p.name && !/^案件\d+$/.test(p.name) ? p.name : '';
+  return [title + (name ? ' ' + name : ''), ...out].join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 async function copyTab(tab) {
-  const text = tabText(tab);
+  const text = summaryText(tab, copyWithTables());
   if (!text) { showToast('先に数字を入力してね'); return; }
   try {
     await navigator.clipboard.writeText(text);
@@ -2383,7 +2513,7 @@ async function copyTab(tab) {
     try { document.execCommand('copy'); } catch (e2) {}
     ta.remove();
   }
-  showToast('結果をコピーしました（LINEなどに貼れます）');
+  showToast('要約をコピーしました（LINEなどに貼れます）');
 }
 
 function showToast(msg) {
@@ -2684,9 +2814,16 @@ document.addEventListener('input', e => {
 document.querySelectorAll('.tab-content').forEach(tab => {
   const bar = document.createElement('div');
   bar.className = 'actions';
-  bar.innerHTML = '<button class="btn-sub primary">📋 結果をコピー</button><button class="btn-sub">クリア</button>';
+  bar.innerHTML = '<button class="btn-sub primary">📋 要約をコピー</button><button class="btn-sub">クリア</button>' +
+    '<label class="copy-opt"><input type="checkbox" class="copy-tables"> 表（内訳・試算など）も入れる</label>';
   bar.children[0].onclick = () => copyTab(tab);
   bar.children[1].onclick = () => clearTab(tab);
+  const cb = bar.querySelector('.copy-tables');
+  cb.checked = copyWithTables();
+  cb.onchange = () => {
+    try { localStorage.setItem(COPY_TABLES_KEY, cb.checked ? '1' : '0'); } catch (e) {}
+    document.querySelectorAll('.copy-tables').forEach(x => { x.checked = cb.checked; });
+  };
   tab.appendChild(bar);
 });
 
