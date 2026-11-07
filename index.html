@@ -3,7 +3,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#1a1d27">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -33,6 +33,15 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root { color-scheme: dark; }
+
+/* 画面を固定：拡大・横ずれ・端での伸び（バウンド）を止める */
+html, body {
+overflow-x: hidden;
+overscroll-behavior: none;
+-webkit-text-size-adjust: 100%;
+text-size-adjust: 100%;
+touch-action: pan-y;
+}
 
 body {
 font-family: 'Noto Sans JP', sans-serif;
@@ -207,7 +216,7 @@ background: var(--surface2);
 border: 1px solid var(--border);
 border-radius: 8px;
 padding: 10px 12px;
-font-size: 15px;
+font-size: 16px; /* 16px未満だとiPhoneがタップ時に拡大する */
 color: var(--text);
 font-family: 'DM Mono', monospace;
 outline: none;
@@ -1748,6 +1757,9 @@ document.addEventListener('focusin', e => {
 
 restoreState();
 calcCF();
+
+// iPhoneのピンチ拡大を止める（ダブルタップ拡大は CSS の touch-action で止めている）
+['gesturestart', 'gesturechange'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
 </script>
 
 <div class="toast" id="toast"></div>
