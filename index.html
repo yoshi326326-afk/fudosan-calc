@@ -371,6 +371,121 @@ font-family: 'DM Mono', monospace;
 tr:last-child td { border-bottom: none; }
 
 tr.highlight td { color: var(--gold); font-weight: 500; }
+/* ===== 案件バー ===== */
+.proj-bar {
+grid-column: 1 / -1;
+display: flex;
+align-items: center;
+gap: 6px;
+position: relative;
+margin-bottom: 2px;
+}
+.proj-label { font-size: 11px; color: var(--text2); flex-shrink: 0; }
+.proj-bar select { flex: 1; min-width: 0; padding: 7px 30px 7px 10px; font-size: 14px; font-family: inherit; }
+.proj-btn {
+flex-shrink: 0;
+width: 38px;
+height: 34px;
+border-radius: 8px;
+border: 1px solid var(--border);
+background: var(--surface2);
+color: var(--text);
+font-size: 16px;
+cursor: pointer;
+}
+.proj-menu {
+position: absolute;
+right: 0;
+top: 40px;
+z-index: 150;
+background: var(--surface2);
+border: 1px solid var(--border);
+border-radius: 12px;
+padding: 6px;
+min-width: 230px;
+box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+display: grid;
+}
+.proj-menu[hidden] { display: none; }
+.proj-menu button {
+text-align: left;
+padding: 11px 12px;
+border: none;
+background: transparent;
+color: var(--text);
+font-size: 14px;
+font-family: inherit;
+border-radius: 8px;
+cursor: pointer;
+}
+.proj-menu button:hover, .proj-menu button:active { background: var(--surface); }
+.proj-menu .danger { color: #e57373; }
+
+/* ===== 比較画面 ===== */
+.overlay {
+position: fixed;
+inset: 0;
+z-index: 300;
+background: rgba(0, 0, 0, 0.6);
+display: flex;
+align-items: flex-end;
+justify-content: center;
+}
+.overlay[hidden] { display: none; }
+.overlay-box {
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: 16px 16px 0 0;
+width: 100%;
+max-width: 1100px;
+max-height: 88vh;
+display: flex;
+flex-direction: column;
+padding-bottom: env(safe-area-inset-bottom);
+}
+.overlay-head {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 14px 16px;
+border-bottom: 1px solid var(--border);
+font-weight: 700;
+color: var(--gold);
+}
+.overlay-body { overflow: auto; padding: 12px 16px 20px; }
+.compare-table { border-collapse: collapse; font-size: 12px; min-width: 100%; }
+.compare-table th, .compare-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; text-align: right; }
+.compare-table th:first-child, .compare-table td:first-child { text-align: left; position: sticky; left: 0; background: var(--surface); color: var(--text2); }
+.compare-table thead th { color: var(--gold); }
+.compare-table .best { color: var(--success); font-weight: 700; }
+.compare-table .sec td { color: var(--accent); font-weight: 700; padding-top: 14px; }
+@media (min-width: 900px) {
+  .overlay { align-items: center; }
+  .overlay-box { border-radius: 16px; }
+}
+
+/* ===== 印刷用シート（画面では隠す） ===== */
+#print-sheet { display: none; }
+@media print {
+  @page { size: A4; margin: 10mm; }
+  html, body { background: #fff !important; color: #000 !important; padding: 0 !important; overflow: visible !important; }
+  body > *:not(#print-sheet) { display: none !important; }
+  #print-sheet { display: block !important; font-family: 'Noto Sans JP', sans-serif; font-size: 9pt; color: #000; }
+  #print-sheet h1 { font-size: 14pt; margin-bottom: 2mm; }
+  #print-sheet .ps-meta { font-size: 8pt; color: #555; margin-bottom: 4mm; }
+  #print-sheet .ps-cols { column-count: 2; column-gap: 7mm; column-fill: auto; }
+  #print-sheet section { margin-bottom: 3mm; }
+  #print-sheet h2 { font-size: 10.5pt; margin-bottom: 1mm; border-bottom: 1.5px solid #333; padding-bottom: 0.8mm; break-after: avoid; }
+  #print-sheet h3 { font-size: 8.5pt; margin: 1.8mm 0 0.6mm; color: #444; break-after: avoid; }
+  #print-sheet table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 0.5mm; }
+  #print-sheet tr { break-inside: avoid; }
+  #print-sheet td, #print-sheet th { padding: 0.5mm 1mm; border-bottom: 0.5px solid #ddd; text-align: left; font-size: 8pt; line-height: 1.35; background: none; color: #000; font-family: inherit; vertical-align: top; }
+  #print-sheet table.kv td:first-child { width: 55%; color: #333; }
+  #print-sheet td.v { text-align: right; }
+  #print-sheet tr.r td { font-weight: 700; }
+  #print-sheet .ps-note { font-size: 7.5pt; color: #555; margin-top: 3mm; }
+}
+
 /* ===== パソコン・タブレット（画面が広いとき） ===== */
 @media (hover: hover) {
   .tab:hover:not(.active) { border-color: var(--accent); color: var(--text); }
@@ -421,6 +536,20 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
 </header>
 
 <div class="tabs">
+  <div class="proj-bar">
+    <span class="proj-label">案件</span>
+    <select id="proj-select" aria-label="案件を選ぶ"></select>
+    <button class="proj-btn" id="proj-menu-btn" aria-label="案件のメニュー">⋯</button>
+    <div class="proj-menu" id="proj-menu" hidden>
+      <button data-act="new">＋ 新しい案件</button>
+      <button data-act="dup">複製して新しい案件にする</button>
+      <button data-act="rename">名前を変える</button>
+      <button data-act="compare">📊 案件を比べる</button>
+      <button data-act="print">🖨 検討シートを印刷・PDF</button>
+      <button data-act="share">🔗 URLで共有</button>
+      <button data-act="delete" class="danger">この案件を削除</button>
+    </div>
+  </div>
   <button class="tab active" data-tab="tanka" onclick="switchTab('tanka')">単価・変換</button>
   <button class="tab" data-tab="rimawari" onclick="switchTab('rimawari')">利回り</button>
   <button class="tab" data-tab="loan" onclick="switchTab('loan')">ローン</button>
@@ -853,6 +982,36 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
   </div>
 
   <div class="card">
+    <div class="card-title"><span>🏢</span>収益物件として売る場合</div>
+    <div class="row2">
+      <div class="field">
+        <label>満室時の年間家賃（万円）</label>
+        <input type="number" inputmode="decimal" id="tb-rent" placeholder="例：300" oninput="calcTenbai()">
+      </div>
+      <div class="field">
+        <label>買主が求める表面利回り（%）</label>
+        <input type="number" inputmode="decimal" id="tb-exit-yield" placeholder="例：7.0" step="0.1" oninput="calcTenbai()">
+      </div>
+    </div>
+    <div class="result-grid" id="tb-yield-result" style="display:none">
+      <div class="result-item" id="tb-yield-sell-row">
+        <span class="result-label" id="tb-yield-sell-label">この利回りで売れる価格（税込）</span>
+        <span class="result-value big" id="tb-yield-sell">—</span>
+      </div>
+      <div class="result-item" id="tb-yield-profit-row">
+        <span class="result-label">その価格での粗利・利益率</span>
+        <span class="result-value" id="tb-yield-profit">—</span>
+      </div>
+      <div class="result-item" id="tb-need-yield-row">
+        <span class="result-label">目標の利益率に必要な販売価格だと、表面利回りは</span>
+        <span class="result-value" id="tb-need-yield">—</span>
+      </div>
+    </div>
+    <button class="link-btn" id="tb-use-yield" style="display:none" onclick="useYieldSell()">この価格を「販売予定価格」に入れる ↓</button>
+    <div class="note">収益物件の買主は利回りで判断するので、出口の価格は「家賃÷買主が求める利回り」で決まる。必要な販売価格の利回りが、相場の利回りより低すぎるなら、その価格で買う人はいないと考えたほうがいい。</div>
+  </div>
+
+  <div class="card">
     <div class="card-title"><span>🏷️</span>販売予定価格で確認</div>
     <div class="field">
       <label>販売予定価格・税込（万円）</label>
@@ -1085,6 +1244,21 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
     <div class="note">返済余裕率は1.3倍以上が金融機関の目安になることが多い。総収益率がローン定数を下回ると、借入が多いほど自己資金の利回りが下がる（逆レバレッジ）。</div>
   </div>
 
+  <div class="card" id="cf-rate-card" style="display:none">
+    <div class="card-title"><span>📈</span>金利が上がったら</div>
+    <table>
+      <thead><tr><th>金利</th><th>年間返済</th><th>1年目の手残り</th><th>返済余裕率</th></tr></thead>
+      <tbody id="cf-rate-table"></tbody>
+    </table>
+    <div class="result-grid">
+      <div class="result-item">
+        <span class="result-label">手残りがゼロになる金利</span>
+        <span class="result-value" id="cf-be-rate">—</span>
+      </div>
+    </div>
+    <div class="note">借りた時点から最後までその金利だった場合の試算（変動金利の上昇の目安）。実際は、金利が変わっても5年間は返済額が変わらないルールなどがあり、金融機関によって違う。</div>
+  </div>
+
   <div class="card">
     <div class="card-title"><span>🚪</span>売却（出口）</div>
     <div class="row2">
@@ -1251,6 +1425,20 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
     <div class="note">路線価は時価の8割程度が目安なので、金融機関によっては土地を割り戻して評価することもある。この数字は担保評価の目安で、実際の融資額を保証するものではない。</div>
   </div>
 </div>
+
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="compare" hidden>
+  <div class="overlay-box">
+    <div class="overlay-head">
+      <span>📊 案件の比較</span>
+      <button class="proj-btn" onclick="closeCompare()" aria-label="閉じる">✕</button>
+    </div>
+    <div class="overlay-body" id="compare-body"></div>
+  </div>
+</div>
+
+<div id="print-sheet"></div>
 
 <script>
 function switchTab(id) {
@@ -1632,6 +1820,25 @@ function calcTenbai() {
   document.getElementById('tb-need-up').textContent = ref ? '+' + man(Math.round((ref - buy) * 10) / 10) + '（' + pct(ref / buy, 1) + '）' : '—';
   show('tb-need-result', true, 'grid');
 
+  // 収益物件として売る場合（家賃÷買主の利回り）
+  const rent = num('tb-rent');
+  const exitYield = num('tb-exit-yield') / 100;
+  const yieldSell = rent && exitYield ? rent / exitYield : null;
+  show('tb-yield-result', !!rent, 'grid');
+  show('tb-yield-sell-row', !!yieldSell);
+  show('tb-yield-profit-row', !!yieldSell);
+  show('tb-use-yield', !!yieldSell, 'block');
+  if (yieldSell) {
+    const y = tenbaiProfit(buy, { sell: yieldSell });
+    document.getElementById('tb-yield-sell-label').textContent = '利回り' + num('tb-exit-yield') + '%で売れる価格（税込）';
+    document.getElementById('tb-yield-sell').textContent = man(Math.round(yieldSell * 10) / 10);
+    const el = document.getElementById('tb-yield-profit');
+    el.textContent = man(y.profit) + '（' + (y.salesExTax > 0 ? pct(y.profit / y.salesExTax, 1) : '—') + '）';
+    el.style.color = y.profit < 0 ? '#e57373' : (need !== null && yieldSell >= need ? 'var(--success)' : '');
+  }
+  show('tb-need-yield-row', !!(rent && need));
+  if (rent && need) document.getElementById('tb-need-yield').textContent = pct(rent / need) + '（これ以下の利回りで買う人がいれば成立）';
+
   // 販売予定価格での確認（なければ必要な販売価格で内訳を出す）
   const sellUse = sellIn || need || be;
   const r = tenbaiProfit(buy, { sell: sellUse });
@@ -1787,6 +1994,33 @@ function calcCF() {
   document.getElementById('cf-table').innerHTML = rows;
   document.getElementById('cf-table-card').style.display = 'block';
 
+  // 金利が上がったら（最初から最後までその金利だった場合）
+  const baseRate = num('cf-rate');
+  const adsAt = r => {
+    const m = r / 100 / 12;
+    if (!loan || !months) return 0;
+    return 12 * (m === 0 ? loan / months : loan * m * Math.pow(1 + m, months) / (Math.pow(1 + m, months) - 1));
+  };
+  if (loan > 0 && months > 0) {
+    document.getElementById('cf-rate-table').innerHTML = [0, 0.5, 1, 1.5, 2].map(up => {
+      const r = baseRate + up;
+      const ads = adsAt(r);
+      const btcf = year1.noi - ads;
+      const color = btcf < 0 ? ' style="color:#e57373"' : '';
+      return `<tr${up === 0 ? ' class="highlight"' : ''}><td>${r.toFixed(2)}%${up ? '（+' + up + '）' : '（今）'}</td><td>${ads.toFixed(1)}</td><td${color}>${btcf.toFixed(1)}</td><td>${(year1.noi / ads).toFixed(2)}倍</td></tr>`;
+    }).join('');
+    let lo = 0, hi = 30;
+    if (year1.noi - adsAt(hi) > 0) {
+      document.getElementById('cf-be-rate').textContent = '30%超（かなり余裕あり）';
+    } else if (year1.noi - adsAt(0) < 0) {
+      document.getElementById('cf-be-rate').textContent = '金利0%でも赤字';
+    } else {
+      for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (year1.noi - adsAt(mid) >= 0) lo = mid; else hi = mid; }
+      document.getElementById('cf-be-rate').textContent = lo.toFixed(2) + '%（今より+' + (lo - baseRate).toFixed(2) + '%）';
+    }
+  }
+  document.getElementById('cf-rate-card').style.display = loan > 0 && months > 0 ? 'block' : 'none';
+
   // 売却
   const exitCap = num('cf-exit-cap') / 100;
   const exitBox = document.getElementById('cf-exit-result');
@@ -1860,20 +2094,36 @@ function calcSekisan() {
 }
 
 // ===== 使いやすさ（入力の保存・コピー・クリア・タブ間の受け渡し） =====
-const STORE_KEY = 'fudosan-calc-v1';
+const STORE_KEY_OLD = 'fudosan-calc-v1';
+const STORE_KEY = 'fudosan-calc-v2';
 const TAB_NAMES = {};
 document.querySelectorAll('.tab').forEach(t => { TAB_NAMES[t.dataset.tab] = t.textContent.trim(); });
+const OLD_PRESETS = { 'tb-land-reg': '1.5', 'tb-months': '6', 'cf-vac': '5', 'cf-opex': '20', 'cf-decline': '1',
+  'cf-hold': '10', 'cf-corp-tax': '34', 'sk-adj': '100', 'sk-share': '100' };
+
+let store = { current: null, projects: {} };
+
+function writeStore() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) { /* 保存できない環境では何もしない */ }
+}
+
+function collectValues() {
+  const values = {};
+  document.querySelectorAll('.tab-content input[id], .tab-content select[id]').forEach(el => {
+    if (el.readOnly || el.value === '') return;
+    values[el.id] = el.value;
+  });
+  return values;
+}
 
 function saveState() {
-  try {
-    const values = {};
-    document.querySelectorAll('.tab-content input[id], .tab-content select[id]').forEach(el => {
-      if (el.readOnly) return;
-      values[el.id] = el.value;
-    });
-    const active = document.querySelector('.tab.active');
-    localStorage.setItem(STORE_KEY, JSON.stringify({ tab: active ? active.dataset.tab : 'tanka', values }));
-  } catch (e) { /* 保存できない環境では何もしない */ }
+  const p = store.projects[store.current];
+  if (!p) return;
+  p.values = collectValues();
+  const active = document.querySelector('.tab.active');
+  p.tab = active ? active.dataset.tab : 'tanka';
+  p.updated = Date.now();
+  writeStore();
 }
 
 function recalcAll() {
@@ -1881,22 +2131,76 @@ function recalcAll() {
     .forEach(fn => { try { fn(); } catch (e) {} });
 }
 
-function restoreState() {
-  let data = null;
-  try { data = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (e) {}
-  if (!data) return;
-  const OLD_PRESETS = { 'tb-land-reg': '1.5', 'tb-months': '6', 'cf-vac': '5', 'cf-opex': '20', 'cf-decline': '1',
-    'cf-hold': '10', 'cf-corp-tax': '34', 'sk-adj': '100', 'sk-share': '100' };
-  Object.entries(data.values || {}).forEach(([id, v]) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (OLD_PRESETS[id] === v) return; // 以前の初期値はそのまま空欄にする
-    if (id === 'sk-unit' && ['15', '18', '20'].includes(v)) return;
-    el.value = v;
+// 画面の入力をすべて入れ替える（案件の切り替え・比較・共有で使う）
+function loadValues(values) {
+  document.querySelectorAll('.tab-content input').forEach(el => { if (!el.readOnly) el.value = el.defaultValue; });
+  document.querySelectorAll('.tab-content select').forEach(el => {
+    const def = [...el.options].findIndex(o => o.defaultSelected);
+    el.selectedIndex = def >= 0 ? def : 0;
   });
+  initiallyHidden.forEach(el => { el.style.display = 'none'; });
+  Object.entries(values || {}).forEach(([id, v]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = v;
+  });
+  if (values && values.tsubo === undefined && values.sqm) {
+    document.getElementById('tsubo').value = (parseFloat(values.sqm) / 3.30579).toFixed(2);
+  }
   setSekisanUnit();
   recalcAll();
-  if (data.tab) switchTab(data.tab);
+}
+
+function newId() { return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+function nextName() {
+  const names = Object.values(store.projects).map(p => p.name);
+  for (let i = 1; ; i++) if (!names.includes('案件' + i)) return '案件' + i;
+}
+
+function addProject(name, values, tab) {
+  const id = newId();
+  store.projects[id] = { name, values: values || {}, tab: tab || 'tanka', updated: Date.now() };
+  return id;
+}
+
+function renderProjectSelect() {
+  const sel = document.getElementById('proj-select');
+  const list = Object.entries(store.projects).sort((a, b) => b[1].updated - a[1].updated);
+  sel.innerHTML = list.map(([id, p]) => `<option value="${id}">${escapeHtml(p.name)}</option>`).join('');
+  sel.value = store.current;
+}
+
+function escapeHtml(t) {
+  return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function openProject(id) {
+  const p = store.projects[id];
+  if (!p) return;
+  store.current = id;
+  loadValues(p.values);
+  switchTab(p.tab || 'tanka');
+  renderProjectSelect();
+  writeStore();
+}
+
+function restoreState() {
+  try { store = JSON.parse(localStorage.getItem(STORE_KEY)) || store; } catch (e) {}
+  if (!store.projects || !Object.keys(store.projects).length) {
+    // 以前の保存データ（案件機能の前）を「案件1」として引き継ぐ
+    store = { current: null, projects: {} };
+    let old = null;
+    try { old = JSON.parse(localStorage.getItem(STORE_KEY_OLD)); } catch (e) {}
+    const values = {};
+    Object.entries((old && old.values) || {}).forEach(([id, v]) => {
+      if (v === '' || OLD_PRESETS[id] === v) return;
+      if (id === 'sk-unit' && ['15', '18', '20'].includes(v)) return;
+      values[id] = v;
+    });
+    store.current = addProject('案件1', values, old && old.tab);
+  }
+  if (!store.projects[store.current]) store.current = Object.keys(store.projects)[0];
+  openProject(store.current);
 }
 
 // 結果が出たら最初は隠れている要素を覚えておく（クリアで戻すため）
@@ -1915,42 +2219,69 @@ function clearTab(tab) {
   showToast('クリアしました');
 }
 
-function tabText(tab) {
-  const lines = ['【' + TAB_NAMES[tab.id.replace('tab-', '')] + '】'];
+// 要素が tab の中で隠されていないか（タブ自体が非表示でも判定できるように、インラインの指定だけ見る）
+function hiddenIn(el, root) {
+  for (let n = el; n && n !== root; n = n.parentElement) {
+    if (n.hidden || n.style.display === 'none' || n.style.visibility === 'hidden') return true;
+  }
+  return false;
+}
+
+function cardName(card) {
+  const title = card.querySelector('.card-title');
+  return title ? [...title.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim() : '';
+}
+
+// タブの入力と結果を取り出す
+function tabData(tab) {
+  const cards = [];
   tab.querySelectorAll('.card').forEach(card => {
-    if (card.offsetParent === null) return;
-    const part = [];
+    if (hiddenIn(card, tab)) return;
+    const inputs = [], results = [], tables = [];
     let hasData = false;
     card.querySelectorAll('.field').forEach(f => {
       const el = f.querySelector('input, select');
       const label = f.querySelector('label');
-      if (!el || !label || f.offsetParent === null || el.readOnly || getComputedStyle(f).visibility === 'hidden') return;
+      if (!el || !label || el.readOnly || hiddenIn(f, card)) return;
       const v = el.tagName === 'SELECT' ? el.selectedOptions[0].text : el.value;
       if (!v) return;
       if (el.tagName !== 'SELECT') hasData = true;
-      part.push('・' + label.innerText.replace('🔗', '').trim() + '：' + v);
+      inputs.push([label.textContent.replace('🔗', '').trim(), v]);
     });
     card.querySelectorAll('.result-item').forEach(r => {
-      if (r.offsetParent === null) return;
+      if (hiddenIn(r, card)) return;
       const spans = r.querySelectorAll('span');
       if (spans.length < 2) return;
-      const v = spans[1].innerText.trim();
+      const v = spans[1].textContent.trim();
       if (!v || v === '—') return;
       hasData = true;
-      part.push('▶ ' + spans[0].innerText.trim() + '：' + v);
+      results.push([spans[0].textContent.trim(), v]);
     });
-    card.querySelectorAll('tbody[id] tr').forEach(tr => {
-      if (tr.offsetParent === null) return;
+    card.querySelectorAll('table').forEach(t => {
+      const body = t.querySelector('tbody[id]');
+      if (!body || !body.rows.length || hiddenIn(t, card)) return;
       hasData = true;
-      part.push('　' + [...tr.cells].map(c => c.innerText.trim()).join(' / '));
+      tables.push({
+        head: [...t.querySelectorAll('thead th')].map(th => th.textContent.trim()),
+        rows: [...body.rows].map(tr => [...tr.cells].map(c => c.textContent.trim())),
+      });
     });
-    if (hasData) {
-      const title = card.querySelector('.card-title');
-      const name = title ? [...title.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim() : '';
-      lines.push('', '■' + name, ...part);
-    }
+    if (hasData) cards.push({ title: cardName(card), inputs, results, tables });
   });
-  return lines.length > 1 ? lines.join('\n') : '';
+  return { name: TAB_NAMES[tab.id.replace('tab-', '')], cards };
+}
+
+function tabText(tab) {
+  const d = tabData(tab);
+  if (!d.cards.length) return '';
+  const lines = ['【' + d.name + '】'];
+  d.cards.forEach(c => {
+    lines.push('', '■' + c.title);
+    c.inputs.forEach(([l, v]) => lines.push('・' + l + '：' + v));
+    c.results.forEach(([l, v]) => lines.push('▶ ' + l + '：' + v));
+    c.tables.forEach(t => t.rows.forEach(r => lines.push('　' + r.join(' / '))));
+  });
+  return lines.join('\n');
 }
 
 async function copyTab(tab) {
@@ -2006,12 +2337,231 @@ function sendShohi() {
   showToast('価格と諸費用を入れました');
 }
 
+function useYieldSell() {
+  const v = document.getElementById('tb-yield-sell').textContent.replace(/[,万円]/g, '');
+  if (!parseFloat(v)) return;
+  setValue('tb-sell', v);
+  calcTenbai();
+  saveState();
+  document.getElementById('tb-sell').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  showToast('販売予定価格に入れました');
+}
+
+// ===== 案件の管理（新規・複製・名前・削除・比較・印刷・共有） =====
+function setupProjectMenu() {
+  const btn = document.getElementById('proj-menu-btn');
+  const menu = document.getElementById('proj-menu');
+  btn.onclick = e => { e.stopPropagation(); menu.hidden = !menu.hidden; };
+  document.addEventListener('click', e => { if (!menu.contains(e.target)) menu.hidden = true; });
+  document.getElementById('proj-select').onchange = e => {
+    saveState();
+    openProject(e.target.value);
+    showToast('「' + store.projects[store.current].name + '」を開きました');
+  };
+  menu.querySelectorAll('button').forEach(b => {
+    b.onclick = () => { menu.hidden = true; projectAction(b.dataset.act); };
+  });
+}
+
+function projectAction(act) {
+  saveState();
+  const cur = store.projects[store.current];
+  if (act === 'new') {
+    const name = prompt('新しい案件の名前', nextName());
+    if (name === null) return;
+    openProject(addProject(name.trim() || nextName(), {}, 'tanka'));
+    showToast('新しい案件を作りました');
+  } else if (act === 'dup') {
+    const name = prompt('複製した案件の名前', cur.name + '（コピー）');
+    if (name === null) return;
+    openProject(addProject(name.trim() || nextName(), { ...cur.values }, cur.tab));
+    showToast('複製しました');
+  } else if (act === 'rename') {
+    const name = prompt('案件の名前', cur.name);
+    if (name === null || !name.trim()) return;
+    cur.name = name.trim();
+    writeStore();
+    renderProjectSelect();
+  } else if (act === 'delete') {
+    if (!confirm('「' + cur.name + '」を削除する？元に戻せないよ。')) return;
+    delete store.projects[store.current];
+    if (!Object.keys(store.projects).length) addProject('案件1', {}, 'tanka');
+    const next = Object.entries(store.projects).sort((a, b) => b[1].updated - a[1].updated)[0][0];
+    openProject(next);
+    showToast('削除しました');
+  } else if (act === 'compare') {
+    openCompare();
+  } else if (act === 'print') {
+    printSheet();
+  } else if (act === 'share') {
+    shareProject();
+  }
+}
+
+// 比較：案件ごとに入力を入れ替えて計算し、主な数字を並べる
+const COMPARE_ROWS = [
+  ['転売', null],
+  ['仕入価格', 'v:tb-buy'],
+  ['目標の利益率', 'v:tb-target', '%'],
+  ['必要な販売価格', 'tb-need-sell', 'low'],
+  ['赤字になる販売価格', 'tb-be-sell', 'low'],
+  ['販売予定価格', 'v:tb-sell'],
+  ['粗利', 'tb-profit', 'high'],
+  ['利益率', 'tb-margin', 'high'],
+  ['PJローン', null],
+  ['借入額', 'pj-loan'],
+  ['必要な自己資金', 'pj-equity', 'low'],
+  ['収益・保有', null],
+  ['表面利回り', 'r-hyomen', 'high'],
+  ['実質利回り', 'r-jissitu', 'high'],
+  ['1年目の手残り', 'cf-btcf', 'high'],
+  ['返済余裕率', 'cf-dscr', 'high'],
+  ['IRR', 'cf-irr', 'high'],
+  ['積算÷価格', 'sk-ratio', 'high'],
+];
+
+function readResult(id) {
+  if (id.startsWith('v:')) {
+    const v = document.getElementById(id.slice(2)).value;
+    return v ? Number(v).toLocaleString('ja-JP') : '';
+  }
+  const el = document.getElementById(id);
+  if (!el || hiddenIn(el, el.closest('.tab-content'))) return '';
+  const t = el.textContent.trim();
+  return t === '—' ? '' : t;
+}
+
+function openCompare() {
+  saveState();
+  const keep = store.current;
+  const list = Object.entries(store.projects).sort((a, b) => b[1].updated - a[1].updated);
+  const cols = list.map(([id, p]) => {
+    loadValues(p.values);
+    const vals = {};
+    COMPARE_ROWS.forEach(([, key]) => { if (key) vals[key] = readResult(key); });
+    return { name: p.name, vals };
+  });
+  openProject(keep);
+
+  const numOf = t => { const m = String(t).replace(/,/g, '').match(/-?\d+(\.\d+)?/); return m ? parseFloat(m[0]) : null; };
+  let html = '<table class="compare-table"><thead><tr><th></th>' + cols.map(c => `<th>${escapeHtml(c.name)}</th>`).join('') + '</tr></thead><tbody>';
+  COMPARE_ROWS.forEach(([label, key, mode]) => {
+    if (!key) { html += `<tr class="sec"><td colspan="${cols.length + 1}">${label}</td></tr>`; return; }
+    const cells = cols.map(c => c.vals[key]);
+    if (!cells.some(Boolean)) return;
+    let best = null;
+    if ((mode === 'high' || mode === 'low') && cols.length > 1) {
+      const nums = cells.map(numOf).filter(n => n !== null);
+      if (nums.length > 1) best = mode === 'high' ? Math.max(...nums) : Math.min(...nums);
+    }
+    const unit = mode === '%' ? '%' : '';
+    html += `<tr><td>${label}</td>` + cells.map(v => {
+      const isBest = best !== null && v && numOf(v) === best;
+      return `<td${isBest ? ' class="best"' : ''}>${v ? escapeHtml(v + unit) : '—'}</td>`;
+    }).join('') + '</tr>';
+  });
+  html += '</tbody></table><p class="note">緑の数字は、その項目で一番良い案件。比べたい案件は、上の「案件」から「＋ 新しい案件」で増やせる。</p>';
+  document.getElementById('compare-body').innerHTML = html;
+  document.getElementById('compare').hidden = false;
+}
+
+function closeCompare() { document.getElementById('compare').hidden = true; }
+
+// 印刷：データのあるタブを1枚にまとめる
+function printSheet() {
+  saveState();
+  // ローン・単価・耐用年数は「収支」などと重なるので載せない。結果が出ているタブだけ載せる
+  const order = ['tenbai', 'pj', 'cf', 'sekisan', 'shohi', 'rimawari'];
+  const sections = order.map(id => tabData(document.getElementById('tab-' + id)))
+    .filter(d => d.cards.some(c => c.results.length || c.tables.length));
+  if (!sections.length) { showToast('先に数字を入力してね'); return; }
+  const p = store.projects[store.current];
+  const row = ([l, v], cls) => `<tr${cls ? ' class="' + cls + '"' : ''}><td>${escapeHtml(l)}</td><td class="v">${escapeHtml(v)}</td></tr>`;
+  const today = new Date();
+  let html = `<h1>${escapeHtml(p.name)}　検討シート</h1><div class="ps-meta">作成日：${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日　／　不動産計算ツールによる概算。税率・融資条件・相場は案件ごとに確認すること</div><div class="ps-cols">`;
+  sections.forEach(sec => {
+    html += `<section><h2>${escapeHtml(sec.name)}</h2>`;
+    sec.cards.forEach(c => {
+      html += `<h3>${escapeHtml(c.title)}</h3><table class="kv">` + c.inputs.map(r => row(r)).join('') + c.results.map(r => row(r, 'r')).join('') + '</table>';
+      c.tables.forEach(t => {
+        html += '<table><tr>' + t.head.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr>' +
+          t.rows.map(r => '<tr>' + r.map((v, i) => `<td${i ? ' class="v"' : ''}>${escapeHtml(v)}</td>`).join('') + '</tr>').join('') + '</table>';
+      });
+    });
+    html += '</section>';
+  });
+  html += '</div>';
+  document.getElementById('print-sheet').innerHTML = html;
+  setTimeout(() => window.print(), 50);
+}
+
+// 共有：今の案件の入力をURLに入れる
+function encodeShare(obj) {
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  let bin = '';
+  bytes.forEach(b => { bin += String.fromCharCode(b); });
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function decodeShare(str) {
+  const b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(b64 + '==='.slice((b64.length + 3) % 4));
+  return JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))));
+}
+
+async function shareProject() {
+  saveState();
+  const p = store.projects[store.current];
+  if (!Object.keys(p.values).length) { showToast('先に数字を入力してね'); return; }
+  // 初期のままの選択肢は送らない（URLを短くするため）
+  const v = {};
+  Object.entries(p.values).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el && el.tagName === 'SELECT') {
+      const def = [...el.options].find(o => o.defaultSelected) || el.options[0];
+      if (def && def.value === val) return;
+    }
+    // 連動している欄は、同じ数字なら1つだけ送る
+    const group = linkOf[id];
+    if (group && group.some(other => other !== id && v[other] === val)) return;
+    v[id] = val;
+  });
+  const url = location.origin + location.pathname + '#p=' + encodeShare({ n: p.name, t: p.tab, v });
+  const title = '不動産計算：' + p.name;
+  if (navigator.share) {
+    try { await navigator.share({ title, url }); return; } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast('共有用のURLをコピーしました');
+  } catch (e) {
+    prompt('このURLをコピーして送ってね', url);
+  }
+}
+
+function importFromUrl() {
+  const m = location.hash.match(/^#p=([\w-]+)/);
+  if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  let data;
+  try { data = decodeShare(m[1]); } catch (e) { showToast('共有URLを読み込めませんでした'); return; }
+  const name = (data.n || '共有された案件') + '（共有）';
+  if (!confirm('共有された案件「' + name + '」を開く？\n今の案件は残したまま、新しい案件として追加するよ。')) return;
+  saveState();
+  const values = { ...(data.v || {}) };
+  Object.entries(data.v || {}).forEach(([id, val]) => {
+    (linkOf[id] || []).forEach(other => { if (values[other] === undefined) values[other] = val; });
+  });
+  openProject(addProject(name, values, data.t));
+  showToast('共有された案件を開きました');
+}
+
 // 同じ意味の欄は、どこか1か所に入れると全タブに反映する
 const LINKED = [
   ['price', 'r-price', 's-price', 'c-price', 'cf-price', 'sk-price', 'tb-buy', 'pj-buy'], // 物件価格
   ['tb-reform', 'pj-reform'],                                                 // リフォーム費用
   ['tb-months', 'pj-months'],                                                 // 保有期間
-  ['r-rent', 'inv-rent', 'cf-gpi'],                                           // 年間家賃
+  ['r-rent', 'inv-rent', 'cf-gpi', 'tb-rent'],                                           // 年間家賃
   ['r-cost', 'inv-cost'],                                                     // 年間経費
   ['l-amount', 's-loan', 'cf-loan'],                                          // 借入金額
   ['l-rate', 'cf-rate'],                                                      // 金利（長期ローン）
@@ -2073,11 +2623,13 @@ document.addEventListener('keydown', () => { justFocused = null; });
 
 restoreState();
 calcCF();
+setupProjectMenu();
+importFromUrl();
 
 // iPhoneのピンチ拡大を止める（ダブルタップ拡大は CSS の touch-action で止めている）
 ['gesturestart', 'gesturechange'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
 </script>
 
-<div class="toast" id="toast"></div>
+
 </body>
 </html>
