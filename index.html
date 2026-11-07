@@ -36,7 +36,7 @@
 
 /* 画面を固定：拡大・横ずれ・端での伸び（バウンド）を止める */
 html, body {
-overflow-x: hidden;
+overflow-x: clip; /* hidden だとタブの上部固定（sticky）が効かなくなる */
 overscroll-behavior: none;
 -webkit-text-size-adjust: 100%;
 text-size-adjust: 100%;
@@ -371,6 +371,45 @@ font-family: 'DM Mono', monospace;
 tr:last-child td { border-bottom: none; }
 
 tr.highlight td { color: var(--gold); font-weight: 500; }
+/* ===== パソコン・タブレット（画面が広いとき） ===== */
+@media (hover: hover) {
+  .tab:hover:not(.active) { border-color: var(--accent); color: var(--text); }
+  .btn-sub:hover, .link-btn:hover { filter: brightness(1.15); }
+}
+
+@media (min-width: 900px) {
+  body { padding-bottom: 40px; }
+  header, .tabs, .tab-content { width: calc(100% - 48px); max-width: 1180px; margin-left: auto; margin-right: auto; }
+  header { padding: 18px 4px 12px; background: transparent; }
+  header h1 { font-size: 20px; }
+  header p { font-size: 12px; }
+
+  /* タブは1列に並べる */
+  .tabs {
+    grid-template-columns: repeat(9, 1fr);
+    gap: 8px;
+    padding: 10px 24px 12px;
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+  .tab { font-size: 13px; padding: 10px 0; letter-spacing: 0; cursor: pointer; }
+  .link-legend { font-size: 12px; }
+
+  /* カードを2列に並べる */
+  .tab-content { padding: 20px 0; }
+  .tab-content.active { display: block; columns: 2; column-gap: 16px; }
+  .card { break-inside: avoid; margin-bottom: 16px; padding: 20px; }
+  .actions { column-span: all; max-width: 560px; margin: 8px auto 0; }
+  .card-title { font-size: 15px; }
+  label { font-size: 12px; }
+}
+
+@media (min-width: 1400px) {
+  header, .tabs, .tab-content { max-width: 1500px; }
+  .tab-content.active { columns: 3; }
+}
+
 </style>
 
 </head>
