@@ -74,9 +74,9 @@ margin-top: 2px;
 
 .tabs {
 display: grid;
-grid-template-columns: repeat(5, 1fr);
+grid-template-columns: repeat(4, 1fr);
 gap: 5px;
-padding: 8px 16px 10px;
+padding: 8px 16px;
 background: var(--surface);
 border-bottom: 1px solid var(--border);
 position: sticky;
@@ -171,6 +171,16 @@ input.linked:focus { border-color: var(--success); box-shadow: 0 0 0 2px rgba(76
 
 .link-mark { font-size: 10px; }
 
+/* 一棟：レントロール */
+.rr-row { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-bottom: 8px; }
+.rr-head { display: flex; gap: 6px; margin-bottom: 6px; }
+.rr-head input { flex: 1; padding: 8px 10px; font-size: 15px; }
+.rr-del { flex: none; width: 38px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-size: 15px; cursor: pointer; }
+.rr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.rr-grid label { font-size: 10px; margin-bottom: 0; }
+.rr-grid input { padding: 8px; font-size: 16px; margin-top: 3px; }
+.rr-sub { font-size: 11px; color: var(--text2); margin-top: 6px; text-align: right; }
+
 /* 後から届く支払い */
 tr.later td { color: var(--gold); }
 .when { font-size: 11px; color: var(--text2); white-space: nowrap; }
@@ -188,7 +198,7 @@ text-align: center;
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 .tab {
-padding: 9px 0;
+padding: 8px 0;
 border-radius: 10px;
 font-size: 11.5px;
 letter-spacing: -0.02em;
@@ -310,9 +320,16 @@ border: 1px solid var(--border);
 border-radius: 10px;
 padding: 12px 14px;
 display: flex;
+flex-wrap: wrap;
 justify-content: space-between;
 align-items: center;
+column-gap: 12px;
+row-gap: 2px;
 }
+
+/* 数字が長いときは折り返して、見出しの下に右寄せで出す */
+.result-item .result-label { flex: 1 1 130px; }
+.result-item .result-value { margin-left: auto; text-align: right; }
 
 .result-label {
 font-size: 11px;
@@ -384,6 +401,33 @@ td {
 padding: 8px;
 border-bottom: 1px solid var(--border);
 font-family: 'DM Mono', monospace;
+}
+
+/* 表の数字は折り返さない。はみ出すときは表だけ横にスクロール */
+td:not(:first-child), th:not(:first-child) { white-space: nowrap; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -4px; padding: 0 4px; }
+.table-wrap table { min-width: 100%; }
+
+/* 長い説明は折りたたむ */
+details.note-d { margin-top: 8px; }
+details.note-d summary {
+cursor: pointer;
+list-style: none;
+font-size: 11px;
+color: var(--accent);
+display: inline-block;
+padding: 2px 0;
+}
+details.note-d summary::-webkit-details-marker { display: none; }
+details.note-d[open] summary { color: var(--text2); }
+details.note-d .note { margin-top: 4px; }
+
+/* タブの上の案件バー（スクロールで流れる） */
+.top-bar {
+background: var(--surface);
+padding: 10px 16px 0;
+display: grid;
+gap: 6px;
 }
 
 tr:last-child td { border-bottom: none; }
@@ -512,19 +556,21 @@ color: var(--gold);
 
 @media (min-width: 900px) {
   body { padding-bottom: 40px; }
-  header, .tabs, .tab-content { width: calc(100% - 48px); max-width: 1180px; margin-left: auto; margin-right: auto; }
+  header, .top-bar, .tabs, .tab-content { width: calc(100% - 48px); max-width: 1180px; margin-left: auto; margin-right: auto; }
+  .top-bar { padding: 10px 24px 0; border: 1px solid var(--border); border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; }
   header { padding: 18px 4px 12px; background: transparent; }
   header h1 { font-size: 20px; }
   header p { font-size: 12px; }
 
   /* タブは1列に並べる */
   .tabs {
-    grid-template-columns: repeat(10, 1fr);
+    grid-template-columns: repeat(11, 1fr);
     gap: 8px;
     padding: 10px 24px 12px;
     border: 1px solid var(--border);
     border-top: none;
     border-radius: 0 0 var(--radius) var(--radius);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
   }
   .tab { font-size: 13px; padding: 10px 0; letter-spacing: 0; cursor: pointer; }
   .link-legend { font-size: 12px; }
@@ -539,7 +585,7 @@ color: var(--gold);
 }
 
 @media (min-width: 1400px) {
-  header, .tabs, .tab-content { max-width: 1500px; }
+  header, .top-bar, .tabs, .tab-content { max-width: 1500px; }
   .tab-content.active { columns: 3; }
 }
 
@@ -553,7 +599,7 @@ color: var(--gold);
   <p>Professional Real Estate Calculator</p>
 </header>
 
-<div class="tabs">
+<div class="top-bar">
   <div class="proj-bar">
     <span class="proj-label">案件</span>
     <select id="proj-select" aria-label="案件を選ぶ"></select>
@@ -568,6 +614,10 @@ color: var(--gold);
       <button data-act="delete" class="danger">この案件を削除</button>
     </div>
   </div>
+  <div class="link-legend"><b>🔗 緑の欄</b>は全タブ連動。1か所に入れればほかのタブにも入る</div>
+</div>
+
+<div class="tabs">
   <button class="tab active" data-tab="tanka" onclick="switchTab('tanka')">単価・変換</button>
   <button class="tab" data-tab="rimawari" onclick="switchTab('rimawari')">利回り</button>
   <button class="tab" data-tab="loan" onclick="switchTab('loan')">ローン</button>
@@ -577,8 +627,8 @@ color: var(--gold);
   <button class="tab" data-tab="tenbai" onclick="switchTab('tenbai')">転売</button>
   <button class="tab" data-tab="pj" onclick="switchTab('pj')">PJローン</button>
   <button class="tab" data-tab="cf" onclick="switchTab('cf')">収支・売却</button>
+  <button class="tab" data-tab="itto" onclick="switchTab('itto')">一棟収益</button>
   <button class="tab" data-tab="sekisan" onclick="switchTab('sekisan')">積算</button>
-  <div class="link-legend"><b>🔗 緑の欄</b>は全タブ連動。1か所に入れればほかのタブにも入る</div>
 </div>
 
 <!-- タブ1：単価・変換 -->
@@ -675,8 +725,8 @@ color: var(--gold);
         <span class="result-value big" id="rt-rev">—</span>
       </div>
     </div>
-    <button class="link-btn" id="rt-to-rent" style="display:none" onclick="sendRentUnit()">年間家賃として「利回り・収支・転売」に入れる →</button>
-    <div class="note">1坪＝3.30579㎡。坪単価＝月額賃料÷専有面積（坪）。月額賃料が空欄で想定の坪単価を入れた場合は、その月額で年間家賃を入れる。一棟なら、全室の賃料の合計と延床（または賃貸面積の合計）を入れる。</div>
+    <button class="link-btn" id="rt-to-rent" style="display:none" onclick="sendRentUnit()">管理費込み・想定坪単価の賃料を「利回り・収支・転売」に入れる →</button>
+    <div class="note">月額賃料は、利回り・収支・転売の月額家賃と自動で連動する（緑の欄）。管理費・共益費も家賃収入に含めたいときや、想定の坪単価で出した賃料を使いたいときは、下のボタンで入れる。1坪＝3.30579㎡。坪単価＝月額賃料÷専有面積（坪）。一棟なら、全室の賃料の合計と延床（または賃貸面積の合計）を入れる。</div>
   </div>
 </div>
 
@@ -1602,6 +1652,207 @@ color: var(--gold);
   </div>
 </div>
 
+<!-- タブ：一棟収益 -->
+
+<div id="tab-itto" class="tab-content">
+  <div class="card">
+    <div class="card-title"><span>🏢</span>レントロール（部屋タイプごと）</div>
+    <input type="hidden" id="rr-data">
+    <div id="rr-list"></div>
+    <div class="row2" style="margin-top:4px">
+      <button class="btn-sub" type="button" onclick="addRentRow(false)">＋ 行を追加</button>
+      <button class="btn-sub" type="button" onclick="addRentRow(true)">＋ 最後の行を複製</button>
+    </div>
+    <div class="note">同じタイプの部屋は1行にまとめて「室数」に入れる（例：1K・10室・うち空室1）。賃料・共益費・面積は1室あたり。空室の部屋は募集賃料で入れる。店舗・駐車場なども1行ずつ入れられる。</div>
+
+    <div class="result-grid" id="it-roll-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">戸数（入居／空室）</span>
+        <span class="result-value" id="it-units">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">稼働率（戸数／面積）</span>
+        <span class="result-value" id="it-occ">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">満室想定の家賃（月／年）</span>
+        <span class="result-value big" id="it-full">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">現況の家賃（月／年）</span>
+        <span class="result-value" id="it-current">—</span>
+      </div>
+      <div class="result-item" id="it-avg-row">
+        <span class="result-label">平均の賃料坪単価（共益費別）</span>
+        <span class="result-value" id="it-avg">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🧾</span>運営経費</div>
+    <div class="row2">
+      <div class="field">
+        <label>想定の空室率（%）</label>
+        <input type="number" inputmode="decimal" id="it-vac" placeholder="空欄なら5" oninput="calcItto()">
+      </div>
+      <div class="field">
+        <label>管理委託料（家賃の%）</label>
+        <input type="number" inputmode="decimal" id="it-pm" placeholder="空欄なら5" oninput="calcItto()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>建物管理・清掃（円/月）</label>
+        <input type="number" inputmode="numeric" id="it-bm" placeholder="例：30000" oninput="calcItto()">
+      </div>
+      <div class="field">
+        <label>共用部の電気・水道（円/月）</label>
+        <input type="number" inputmode="numeric" id="it-util" placeholder="例：8000" oninput="calcItto()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>固都税（万円/年）</label>
+        <input type="number" inputmode="decimal" id="it-tax" placeholder="例：45" oninput="calcItto()">
+      </div>
+      <div class="field">
+        <label>火災・地震保険（万円/年）</label>
+        <input type="number" inputmode="decimal" id="it-ins" placeholder="例：6" oninput="calcItto()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>修繕・原状回復（家賃の%）</label>
+        <input type="number" inputmode="decimal" id="it-repair" placeholder="空欄なら5" oninput="calcItto()">
+      </div>
+      <div class="field">
+        <label>その他（万円/年）</label>
+        <input type="number" inputmode="decimal" id="it-other" placeholder="例：10" oninput="calcItto()">
+      </div>
+    </div>
+    <div class="note">%の項目は、満室想定の家賃から空室分を引いた家賃（実際に入る家賃）にかける。「その他」には、エレベーター・消防点検・ネット設備・広告料などを入れる。</div>
+
+    <div class="result-grid" id="it-noi-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">実際に入る家賃（年・空室を除く）</span>
+        <span class="result-value" id="it-egi">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">運営経費（年）</span>
+        <span class="result-value" id="it-opex">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">NOI（年間の営業利益）</span>
+        <span class="result-value big green" id="it-noi">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>💹</span>価格と利回り</div>
+    <div class="row2">
+      <div class="field">
+        <label>物件価格（万円）</label>
+        <input type="number" inputmode="decimal" id="it-price" placeholder="例：15000" oninput="calcItto()">
+      </div>
+      <div class="field">
+        <label>購入諸費用（万円）</label>
+        <input type="number" inputmode="decimal" id="it-cost" placeholder="例：1000" oninput="calcItto()">
+      </div>
+    </div>
+    <div class="result-grid" id="it-yield-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">表面利回り（満室想定）</span>
+        <span class="result-value big" id="it-gross-full">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">表面利回り（現況）</span>
+        <span class="result-value" id="it-gross-cur">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">NOI利回り（NOI÷価格）</span>
+        <span class="result-value big green" id="it-noi-yield">—</span>
+      </div>
+      <div class="result-item" id="it-fcr-row">
+        <span class="result-label">総収益率（NOI÷価格＋諸費用）</span>
+        <span class="result-value" id="it-fcr">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">価格の坪単価・1戸あたり</span>
+        <span class="result-value" id="it-per">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🏦</span>融資</div>
+    <div class="field">
+      <label>借入金額（万円）</label>
+      <input type="number" inputmode="decimal" id="it-loan" placeholder="例：13500" oninput="calcItto()">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>金利（年率 %）</label>
+        <input type="number" inputmode="decimal" id="it-rate" placeholder="例：2.0" step="0.01" oninput="calcItto()">
+      </div>
+      <div class="field">
+        <label>返済期間（年）</label>
+        <input type="number" inputmode="decimal" id="it-years" placeholder="例：30" oninput="calcItto()">
+      </div>
+    </div>
+    <div class="result-grid" id="it-loan-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label">年間返済額（月々）</span>
+        <span class="result-value" id="it-ads">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">返済余裕率（NOI÷返済額）</span>
+        <span class="result-value" id="it-dscr">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">手残り（税引前・年／月）</span>
+        <span class="result-value big green" id="it-btcf">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">自己資金と、その利回り</span>
+        <span class="result-value" id="it-ccr">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">損益分岐の稼働率（手残りがゼロになる）</span>
+        <span class="result-value" id="it-be-occ">—</span>
+      </div>
+    </div>
+    <div class="note">返済余裕率は1.3倍以上が金融機関の目安になることが多い。損益分岐の稼働率が低いほど、空室に強い。</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🎯</span>指値（買付価格の上限）</div>
+    <div class="row2">
+      <div class="field">
+        <label>目標の表面利回り（%）</label>
+        <input type="number" inputmode="decimal" id="it-target-gross" placeholder="例：8.0" step="0.1" oninput="calcItto()">
+      </div>
+      <div class="field">
+        <label>目標のNOI利回り（%）</label>
+        <input type="number" inputmode="decimal" id="it-target-noi" placeholder="例：6.0" step="0.1" oninput="calcItto()">
+      </div>
+    </div>
+    <div class="result-grid" id="it-target-result" style="display:none">
+      <div class="result-item" id="it-tg-row">
+        <span class="result-label" id="it-tg-label">表面利回りで見た価格</span>
+        <span class="result-value big" id="it-tg">—</span>
+      </div>
+      <div class="result-item" id="it-tn-row">
+        <span class="result-label" id="it-tn-label">NOI利回りで見た価格</span>
+        <span class="result-value big" id="it-tn">—</span>
+      </div>
+    </div>
+    <div class="note">表面利回りは満室想定の家賃で計算。経費が重い物件ほど、NOI利回りで見た価格のほうが低くなる。</div>
+    <button class="link-btn" id="it-to-cf" style="display:none" onclick="sendItto()">この内容を「収支・売却」に入れて、売却まで試算する →</button>
+  </div>
+</div>
+
 <!-- タブ8：積算評価 -->
 
 <div id="tab-sekisan" class="tab-content">
@@ -1749,6 +2000,214 @@ function calcTanka() {
   document.getElementById('tanka-result').style.display = 'grid';
 }
 
+// ===== 一棟収益 =====
+let lastRR = null;
+
+function getRR() {
+  try { return JSON.parse(document.getElementById('rr-data').value || '[]'); } catch (e) { return []; }
+}
+
+function rrRowHtml(r, i) {
+  const v = x => (x === undefined || x === null || x === '' ? '' : x);
+  return `<div class="rr-row" data-i="${i}">
+    <div class="rr-head"><input type="text" data-k="n" placeholder="タイプ・部屋（例：1K、101、店舗）" value="${escapeHtml(v(r.n))}"><button type="button" class="rr-del" aria-label="この行を削除">✕</button></div>
+    <div class="rr-grid">
+      <label>室数<input type="number" inputmode="numeric" data-k="c" placeholder="1" value="${v(r.c)}"></label>
+      <label>面積（㎡）<input type="number" inputmode="decimal" data-k="a" placeholder="25" value="${v(r.a)}"></label>
+      <label>うち空室<input type="number" inputmode="numeric" data-k="v" placeholder="0" value="${v(r.v)}"></label>
+      <label>賃料（円）<input type="number" inputmode="numeric" data-k="r" placeholder="85000" value="${v(r.r)}"></label>
+      <label>共益費（円）<input type="number" inputmode="numeric" data-k="k" placeholder="5000" value="${v(r.k)}"></label>
+    </div>
+    <div class="rr-sub"></div>
+  </div>`;
+}
+
+function renderRentRoll() {
+  const data = getRR();
+  const list = data.length ? data : [{}];
+  document.getElementById('rr-list').innerHTML = list.map(rrRowHtml).join('');
+  lastRR = document.getElementById('rr-data').value;
+}
+
+function readRentRoll() {
+  const rows = [...document.querySelectorAll('#rr-list .rr-row')].map(row => {
+    const o = {};
+    row.querySelectorAll('[data-k]').forEach(inp => {
+      if (inp.value === '') return;
+      o[inp.dataset.k] = inp.dataset.k === 'n' ? inp.value : parseFloat(inp.value);
+    });
+    return o;
+  });
+  const keep = rows.filter(o => Object.keys(o).length);
+  const el = document.getElementById('rr-data');
+  el.value = keep.length ? JSON.stringify(keep) : '';
+  lastRR = el.value;
+}
+
+function addRentRow(copyLast) {
+  readRentRoll();
+  const data = getRR();
+  let row = {};
+  if (copyLast && data.length) {
+    row = { ...data[data.length - 1] };
+    const m = String(row.n || '').match(/^(.*?)(\d+)$/);
+    if (m) row.n = m[1] + (parseInt(m[2], 10) + 1);
+  }
+  data.push(row);
+  document.getElementById('rr-data').value = JSON.stringify(data);
+  renderRentRoll();
+  calcItto();
+  saveState();
+  const rows = document.querySelectorAll('#rr-list .rr-row');
+  rows[rows.length - 1].querySelector('input').focus();
+}
+
+function setupRentRoll() {
+  const list = document.getElementById('rr-list');
+  list.addEventListener('input', () => { readRentRoll(); calcItto(); });
+  list.addEventListener('click', e => {
+    if (!e.target.classList.contains('rr-del')) return;
+    e.target.closest('.rr-row').remove();
+    readRentRoll();
+    if (!list.children.length) renderRentRoll();
+    calcItto();
+    saveState();
+  });
+  renderRentRoll();
+}
+
+function rentRollLines() {
+  return getRR().filter(r => r.c || r.r).map(r => {
+    const c = r.c || 1;
+    return (r.n || '部屋') + ' ×' + c + '室' + (r.v ? '（空' + r.v + '）' : '') + (r.a ? ' ' + r.a + '㎡' : '') +
+      ' 賃料' + Math.round(r.r || 0).toLocaleString('ja-JP') + '円' + (r.k ? '＋共益費' + Math.round(r.k).toLocaleString('ja-JP') + '円' : '');
+  });
+}
+
+function calcItto() {
+  if (document.getElementById('rr-data').value !== lastRR) renderRentRoll();
+  const rows = getRR().map(r => ({ c: r.c || (r.r || r.k ? 1 : 0), a: r.a || 0, r: r.r || 0, k: r.k || 0, v: Math.min(r.v || 0, r.c || 1) }));
+  // 行ごとの小計
+  document.querySelectorAll('#rr-list .rr-row').forEach((el, i) => {
+    const r = rows[i];
+    const sub = el.querySelector('.rr-sub');
+    if (sub) sub.textContent = r && (r.r || r.k) ? '月 ' + Math.round(r.c * (r.r + r.k)).toLocaleString('ja-JP') + '円（満室）' : '';
+  });
+
+  const units = rows.reduce((s2, r) => s2 + r.c, 0);
+  const vacant = rows.reduce((s2, r) => s2 + r.v, 0);
+  const area = rows.reduce((s2, r) => s2 + r.c * r.a, 0);
+  const vacArea = rows.reduce((s2, r) => s2 + r.v * r.a, 0);
+  const fullM = rows.reduce((s2, r) => s2 + r.c * (r.r + r.k), 0);
+  const curM = rows.reduce((s2, r) => s2 + (r.c - r.v) * (r.r + r.k), 0);
+  const rentOnly = rows.reduce((s2, r) => s2 + r.c * r.r, 0);
+  const fullY = fullM * 12 / 10000;
+  const curY = curM * 12 / 10000;
+  const yen = v => Math.round(v).toLocaleString('ja-JP') + '円';
+  const has = fullM > 0;
+
+  show('it-roll-result', has, 'grid');
+  show('it-noi-result', has, 'grid');
+  if (!has) { ['it-yield-result', 'it-loan-result', 'it-target-result', 'it-to-cf'].forEach(id => show(id, false)); return; }
+
+  document.getElementById('it-units').textContent = units + '戸（入居' + (units - vacant) + '／空室' + vacant + '）';
+  document.getElementById('it-occ').textContent = pct((units - vacant) / units, 1) + (area ? '／' + pct((area - vacArea) / area, 1) : '');
+  document.getElementById('it-full').textContent = yen(fullM) + '／' + man(Math.round(fullY * 10) / 10);
+  document.getElementById('it-current').textContent = yen(curM) + '／' + man(Math.round(curY * 10) / 10);
+  show('it-avg-row', area > 0);
+  if (area > 0) document.getElementById('it-avg').textContent = yen(rentOnly / (area / 3.30579)) + '/坪（総面積' + area.toFixed(1) + '㎡＝' + (area / 3.30579).toFixed(1) + '坪）';
+
+  // 経費とNOI
+  const vacIn = document.getElementById('it-vac').value;
+  const vacRate = (vacIn !== '' ? parseFloat(vacIn) : 5) / 100;
+  const pmIn = document.getElementById('it-pm').value;
+  const repIn = document.getElementById('it-repair').value;
+  const pm = (pmIn !== '' ? parseFloat(pmIn) : 5) / 100;
+  const repair = (repIn !== '' ? parseFloat(repIn) : 5) / 100;
+  const egi = fullY * (1 - vacRate);
+  const fixed = (num('it-bm') + num('it-util')) * 12 / 10000 + num('it-tax') + num('it-ins') + num('it-other');
+  const opex = egi * (pm + repair) + fixed;
+  const noi = egi - opex;
+  document.getElementById('it-egi').textContent = man(Math.round(egi * 10) / 10) + '（空室率' + (vacRate * 100) + '%）';
+  document.getElementById('it-opex').textContent = man(Math.round(opex * 10) / 10) + '（家賃の' + pct(egi > 0 ? opex / egi : 0, 1) + '）';
+  document.getElementById('it-noi').textContent = man(Math.round(noi * 10) / 10);
+
+  // 利回り
+  const price = num('it-price');
+  const cost = num('it-cost');
+  show('it-yield-result', price > 0, 'grid');
+  if (price > 0) {
+    document.getElementById('it-gross-full').textContent = pct(fullY / price);
+    document.getElementById('it-gross-cur').textContent = pct(curY / price);
+    document.getElementById('it-noi-yield').textContent = pct(noi / price);
+    show('it-fcr-row', cost > 0);
+    document.getElementById('it-fcr').textContent = pct(noi / (price + cost));
+    document.getElementById('it-per').textContent = (area ? man(Math.round(price / (area / 3.30579) * 10) / 10) + '/坪・' : '') + man(Math.round(price / units * 10) / 10) + '/戸';
+  }
+
+  // 融資
+  const loan = num('it-loan');
+  const rate = num('it-rate') / 100 / 12;
+  const months = num('it-years') * 12;
+  const okLoan = price > 0 && loan > 0 && months > 0;
+  show('it-loan-result', okLoan, 'grid');
+  if (okLoan) {
+    const pay = rate === 0 ? loan / months : loan * rate * Math.pow(1 + rate, months) / (Math.pow(1 + rate, months) - 1);
+    const ads = pay * 12;
+    const btcf = noi - ads;
+    const equity = price + cost - loan;
+    document.getElementById('it-ads').textContent = man(Math.round(ads * 10) / 10) + '（月 ' + man(Math.round(pay * 10) / 10) + '）';
+    document.getElementById('it-dscr').textContent = (noi / ads).toFixed(2) + '倍';
+    const el = document.getElementById('it-btcf');
+    el.textContent = man(Math.round(btcf * 10) / 10) + '／月 ' + man(Math.round(btcf / 12 * 10) / 10);
+    el.style.color = btcf < 0 ? '#e57373' : '';
+    document.getElementById('it-ccr').textContent = man(Math.round(equity * 10) / 10) + (equity > 0 ? '（' + pct(btcf / equity) + '）' : '');
+    // 手残りゼロの稼働率：満室家賃×稼働率×(1−%経費) − 固定費 − 返済 ＝ 0
+    const occBe = (ads + fixed) / (fullY * (1 - pm - repair));
+    document.getElementById('it-be-occ').textContent = occBe > 1 ? '満室でも赤字' : pct(occBe, 1) + '（空室' + pct(1 - occBe, 1) + 'まで耐えられる）';
+  }
+
+  // 指値
+  const tg = num('it-target-gross') / 100;
+  const tn = num('it-target-noi') / 100;
+  show('it-target-result', !!(tg || tn), 'grid');
+  show('it-tg-row', !!tg);
+  show('it-tn-row', !!tn);
+  if (tg) {
+    document.getElementById('it-tg-label').textContent = '表面利回り' + num('it-target-gross') + '%になる価格';
+    document.getElementById('it-tg').textContent = man(Math.floor(fullY / tg * 10) / 10) + (price ? '（' + (fullY / tg - price >= 0 ? '+' : '') + man(Math.round((fullY / tg - price) * 10) / 10) + '）' : '');
+  }
+  if (tn) {
+    document.getElementById('it-tn-label').textContent = 'NOI利回り' + num('it-target-noi') + '%になる価格';
+    document.getElementById('it-tn').textContent = man(Math.floor(noi / tn * 10) / 10) + (price ? '（' + (noi / tn - price >= 0 ? '+' : '') + man(Math.round((noi / tn - price) * 10) / 10) + '）' : '');
+  }
+  show('it-to-cf', price > 0, 'block');
+}
+
+// 一棟の内容を「収支・売却」へ
+function sendItto() {
+  readRentRoll();
+  const rows = getRR();
+  const fullM = rows.reduce((s2, r) => s2 + (r.c || 1) * ((r.r || 0) + (r.k || 0)), 0);
+  if (!fullM) return;
+  const monthly = Math.round(fullM);
+  ['r-mrent', 'cf-mrent', 'tb-mrent', 'rt-rent'].forEach(id => setValue(id, monthly));
+  ['r-rent', 'inv-rent', 'cf-gpi', 'tb-rent'].forEach(id => setValue(id, Math.round(monthly * 12 / 100) / 100));
+  const vacIn = document.getElementById('it-vac').value;
+  setValue('cf-vac', vacIn !== '' ? vacIn : 5);
+  const pmIn = document.getElementById('it-pm').value;
+  const repIn = document.getElementById('it-repair').value;
+  setValue('cf-opex', (pmIn !== '' ? parseFloat(pmIn) : 5) + (repIn !== '' ? parseFloat(repIn) : 5));
+  const fixed = (num('it-bm') + num('it-util')) * 12 / 10000 + num('it-tax') + num('it-ins') + num('it-other');
+  ['cf-kanri', 'cf-shuzen', 'r-kanri', 'r-shuzen'].forEach(id => setValue(id, ''));
+  ['cf-other', 'r-other'].forEach(id => setValue(id, fixed ? Math.round(fixed * 100) / 100 : ''));
+  deriveFrom('r-other');
+  ['cf-cost'].forEach(id => setValue(id, document.getElementById('it-cost').value));
+  recalcAll();
+  switchTab('cf');
+  showToast('一棟の家賃・空室率・経費を収支に入れました');
+}
+
 // 賃料の坪単価
 function calcRentUnit() {
   const rent = num('rt-rent');
@@ -1782,7 +2241,8 @@ function sendRentUnit() {
   if (!monthly) return;
   const annual = Math.round(monthly * 12 / 1000) / 10; // 万円
   ['r-rent', 'inv-rent', 'cf-gpi', 'tb-rent'].forEach(id => setValue(id, annual));
-  deriveFrom('r-rent');
+  // 月額家賃も合わせる（単価タブの賃料欄は管理費抜きのまま残す）
+  ['r-mrent', 'cf-mrent', 'tb-mrent'].forEach(id => setValue(id, Math.round(monthly)));
   recalcAll();
   saveState();
   showToast('年間家賃 ' + annual + '万円 を入れました');
@@ -2554,7 +3014,7 @@ function saveState() {
 }
 
 function recalcAll() {
-  [calcTanka, calcRentUnit, calcRimawari, calcInverse, calcLoan, calcShohi, calcChukaisho, calcTaiyo, calcTenbai, calcCF, calcSekisan]
+  [calcTanka, calcRentUnit, calcItto, calcRimawari, calcInverse, calcLoan, calcShohi, calcChukaisho, calcTaiyo, calcTenbai, calcCF, calcSekisan]
     .forEach(fn => { try { fn(); } catch (e) {} });
 }
 
@@ -2566,6 +3026,7 @@ function loadValues(values) {
     el.selectedIndex = def >= 0 ? def : 0;
   });
   initiallyHidden.forEach(el => { el.style.display = 'none'; });
+  document.getElementById('rr-data').value = ''; // 隠し欄は初期値に戻らないので明示的に空にする
   Object.entries(values || {}).forEach(([id, v]) => {
     const el = document.getElementById(id);
     if (el) el.value = v;
@@ -2574,6 +3035,7 @@ function loadValues(values) {
     document.getElementById('tsubo').value = (parseFloat(values.sqm) / 3.30579).toFixed(2);
   }
   setSekisanUnit();
+  lastRR = null; // レントロールを描き直す
   recalcAll();
 }
 
@@ -2641,6 +3103,9 @@ function clearTab(tab) {
     el.selectedIndex = def >= 0 ? def : 0;
   });
   initiallyHidden.forEach(el => { if (tab.contains(el)) el.style.display = 'none'; });
+  if (tab.contains(document.getElementById('rr-data'))) document.getElementById('rr-data').value = '';
+  lastRR = null;
+  recalcAll();
   window.scrollTo(0, 0);
   saveState();
   showToast('クリアしました');
@@ -2781,6 +3246,16 @@ const SUMMARY = {
     ['o', 'cf-sale', '売却価格'], ['o', 'cf-sale-net', '売却での手残り'], ['o', 'cf-total', '投資全体の利益'], ['o', 'cf-irr', 'IRR'],
     ['tb', 'cf-rate-table', '金利が上がったら'], ['tb', 'cf-table', '年別の収支'],
   ],
+  itto: [
+    ['h', 'レントロール'], ['rr'],
+    ['o', 'it-units', '戸数'], ['o', 'it-occ', '稼働率'], ['o', 'it-full', '満室想定の家賃（月／年）'], ['o', 'it-current', '現況の家賃（月／年）'], ['o', 'it-avg', '平均坪単価'],
+    ['h', '経費とNOI'], ['i', 'it-vac', '想定の空室率', '%'], ['o', 'it-opex', '運営経費（年）'], ['o', 'it-noi', 'NOI'],
+    ['h', '価格と利回り'], ['i', 'it-price', '物件価格', '万円'],
+    ['o', 'it-gross-full', '表面利回り（満室）'], ['o', 'it-gross-cur', '表面利回り（現況）'], ['o', 'it-noi-yield', 'NOI利回り'], ['o', 'it-per', '坪単価・1戸あたり'],
+    ['h', '融資'], ['i', 'it-loan', '借入金額', '万円'], ['i', 'it-rate', '金利', '%'], ['i', 'it-years', '返済期間', '年'],
+    ['o', 'it-ads', '年間返済'], ['o', 'it-dscr', '返済余裕率'], ['o', 'it-btcf', '手残り（年／月）'], ['o', 'it-be-occ', '損益分岐の稼働率'],
+    ['h', '指値'], ['o', 'it-tg', '目標の表面利回りの価格'], ['o', 'it-tn', '目標のNOI利回りの価格'],
+  ],
   sekisan: [
     ['i', 'sk-land', '土地面積', '㎡'], ['i', 'sk-rosen', '路線価', '千円/㎡'], ['i', 'sk-structure', '構造'],
     ['i', 'sk-floor', '延床面積', '㎡'], ['i', 'sk-age', '築年数', '年'], ['i', 'sk-price', '物件価格', '万円'],
@@ -2807,6 +3282,7 @@ function summaryText(tab, withTables) {
   let hasResult = false;
   spec.forEach(([type, key, label, unit]) => {
     if (type === 'h') { pendingHead = key; return; }
+    if (type === 'rr') { rentRollLines().forEach(l => push('・' + l)); return; }
     const el = document.getElementById(key);
     if (!el || hiddenIn(el, tab)) return;
     if (type === 'i') {
@@ -2967,6 +3443,13 @@ const COMPARE_ROWS = [
   ['PJローン', null],
   ['借入額', 'pj-loan'],
   ['必要な自己資金', 'pj-equity', 'low'],
+  ['一棟収益', null],
+  ['戸数', 'it-units'],
+  ['満室想定の年間家賃', 'it-full'],
+  ['表面利回り（満室）', 'it-gross-full', 'high'],
+  ['NOI利回り', 'it-noi-yield', 'high'],
+  ['手残り（年／月）', 'it-btcf', 'high'],
+  ['損益分岐の稼働率', 'it-be-occ', 'low'],
   ['収益・保有', null],
   ['表面利回り', 'r-hyomen', 'high'],
   ['実質利回り', 'r-jissitu', 'high'],
@@ -3027,7 +3510,7 @@ function closeCompare() { document.getElementById('compare').hidden = true; }
 function printSheet() {
   saveState();
   // ローン・単価・耐用年数は「収支」などと重なるので載せない。結果が出ているタブだけ載せる
-  const order = ['tenbai', 'pj', 'cf', 'sekisan', 'shohi', 'chukai', 'rimawari'];
+  const order = ['itto', 'tenbai', 'pj', 'cf', 'sekisan', 'shohi', 'chukai', 'rimawari'];
   const sections = order.map(id => tabData(document.getElementById('tab-' + id)))
     .filter(d => d.cards.some(c => c.results.length || c.tables.length));
   if (!sections.length) { showToast('先に数字を入力してね'); return; }
@@ -3037,6 +3520,10 @@ function printSheet() {
   let html = `<h1>${escapeHtml(p.name)}　検討シート</h1><div class="ps-meta">作成日：${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日　／　不動産計算ツールによる概算。税率・融資条件・相場は案件ごとに確認すること</div><div class="ps-cols">`;
   sections.forEach(sec => {
     html += `<section><h2>${escapeHtml(sec.name)}</h2>`;
+    if (sec.name === TAB_NAMES.itto) {
+      const lines = rentRollLines();
+      if (lines.length) html += '<h3>レントロール</h3><table class="kv">' + lines.map(l => `<tr><td colspan="2">${escapeHtml(l)}</td></tr>`).join('') + '</table>';
+    }
     sec.cards.forEach(c => {
       html += `<h3>${escapeHtml(c.title)}</h3><table class="kv">` + c.inputs.map(r => row(r)).join('') + c.results.map(r => row(r, 'r')).join('') + '</table>';
       c.tables.forEach(t => {
@@ -3114,20 +3601,21 @@ function importFromUrl() {
 
 // 同じ意味の欄は、どこか1か所に入れると全タブに反映する
 const LINKED = [
-  ['price', 'r-price', 's-price', 'c-price', 'cf-price', 'sk-price', 'tb-buy', 'pj-buy'], // 物件価格
+  ['price', 'r-price', 's-price', 'c-price', 'cf-price', 'sk-price', 'tb-buy', 'pj-buy', 'it-price'], // 物件価格
   ['tb-reform', 'pj-reform'],                                                 // リフォーム費用
   ['tb-months', 'pj-months'],                                                 // 保有期間
   ['r-rent', 'inv-rent', 'cf-gpi', 'tb-rent'],
-  ['r-mrent', 'cf-mrent', 'tb-mrent'],                                         // 月額家賃（円）
+  ['r-mrent', 'cf-mrent', 'tb-mrent', 'rt-rent'],                                         // 月額家賃（円）
   ['r-kanri', 'cf-kanri'],                                                    // 管理費（円/月）
   ['r-shuzen', 'cf-shuzen'],                                                  // 修繕積立金（円/月）
   ['r-other', 'cf-other'],                                                    // その他の年間経費
   ['l-policy', 'cf-policy', 'pj-policy'],                                     // 政策金利
   ['l-spread', 'cf-spread'],                                                  // 上乗せ幅（長期ローン）                                           // 年間家賃
   ['r-cost', 'inv-cost'],                                                     // 年間経費
-  ['l-amount', 's-loan', 'cf-loan'],                                          // 借入金額
-  ['l-rate', 'cf-rate'],                                                      // 金利（長期ローン）
-  ['l-years', 'cf-years'],                                                    // 返済期間
+  ['l-amount', 's-loan', 'cf-loan', 'it-loan'],                                          // 借入金額
+  ['l-rate', 'cf-rate', 'it-rate'],                                                      // 金利（長期ローン）
+  ['l-years', 'cf-years', 'it-years'],
+  ['cf-cost', 'it-cost'],                                                     // 購入諸費用                                                    // 返済期間
   ['t-bldprice', 'cf-bld'],                                                   // 建物価格
   ['sqm', 'area_sqm'],                                                        // 面積（㎡）
 ];
@@ -3145,7 +3633,7 @@ LINKED.forEach(group => group.forEach(id => {
 
 // 月額と年額をつなぐ：月額を入れたら年額、年額を入れたら月額を自動で入れる
 const RENT_ANNUAL = ['r-rent', 'inv-rent', 'cf-gpi', 'tb-rent'];
-const RENT_MONTHLY = ['r-mrent', 'cf-mrent', 'tb-mrent'];
+const RENT_MONTHLY = ['r-mrent', 'cf-mrent', 'tb-mrent', 'rt-rent'];
 const COST_PARTS = ['r-kanri', 'r-shuzen', 'r-other'];
 
 function setGroup(ids, v) { ids.forEach(id => setValue(id, v)); }
@@ -3158,13 +3646,13 @@ function derivePolicy(id) {
   const spread = document.getElementById('l-spread').value;
   const pjSpread = document.getElementById('pj-spread').value;
   if (POLICY_IDS.includes(id) || id === 'l-spread' || id === 'cf-spread') {
-    if (pol !== '' && spread !== '') setGroup(['l-rate', 'cf-rate'], round3(parseFloat(pol) + parseFloat(spread)));
+    if (pol !== '' && spread !== '') setGroup(['l-rate', 'cf-rate', 'it-rate'], round3(parseFloat(pol) + parseFloat(spread)));
   }
   if (POLICY_IDS.includes(id) || id === 'pj-spread') {
     if (pol !== '' && pjSpread !== '') setValue('tb-rate', round3(parseFloat(pol) + parseFloat(pjSpread)));
   }
   // 金利を直接入れたら、上乗せ幅を逆算する
-  if ((id === 'l-rate' || id === 'cf-rate') && pol !== '') {
+  if ((id === 'l-rate' || id === 'cf-rate' || id === 'it-rate') && pol !== '') {
     const r = document.getElementById(id).value;
     if (r !== '') setGroup(['l-spread', 'cf-spread'], round3(parseFloat(r) - parseFloat(pol)));
   }
@@ -3239,6 +3727,24 @@ document.addEventListener('mouseup', e => {
 });
 document.addEventListener('keydown', () => { justFocused = null; });
 
+// 表を横スクロールできる箱に入れる
+document.querySelectorAll('.tab-content table').forEach(t => {
+  const wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+  t.parentNode.insertBefore(wrap, t);
+  wrap.appendChild(t);
+});
+// 長い説明は「ⓘ 説明」で開くようにする（計算で中身が変わるものは除く）
+document.querySelectorAll('.tab-content .note').forEach(n => {
+  if (n.id || n.closest('details') || n.textContent.trim().length < 60) return;
+  const d = document.createElement('details');
+  d.className = 'note-d';
+  d.innerHTML = '<summary>ⓘ 説明を見る</summary>';
+  n.parentNode.insertBefore(d, n);
+  d.appendChild(n);
+});
+
+setupRentRoll();
 restoreState();
 calcCF();
 setupProjectMenu();
