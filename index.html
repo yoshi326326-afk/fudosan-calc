@@ -145,7 +145,27 @@ transition: all 0.25s;
 z-index: 200;
 }
 
-.link-mark { font-size: 10px; opacity: 0.7; }
+/* ほかのタブと連動している欄 */
+input.linked {
+border-color: var(--success);
+background: rgba(76, 175, 154, 0.10);
+color: #7fe0c8;
+}
+
+input.linked:focus { border-color: var(--success); box-shadow: 0 0 0 2px rgba(76, 175, 154, 0.35); }
+
+.field.is-linked label { color: var(--success); }
+
+.link-mark { font-size: 10px; }
+
+.link-legend {
+grid-column: 1 / -1;
+font-size: 11px;
+color: var(--text2);
+text-align: center;
+}
+
+.link-legend b { color: var(--success); font-weight: 500; }
 
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -361,6 +381,7 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
   <button class="tab" data-tab="tenbai" onclick="switchTab('tenbai')">転売</button>
   <button class="tab" data-tab="cf" onclick="switchTab('cf')">収支・売却</button>
   <button class="tab" data-tab="sekisan" onclick="switchTab('sekisan')">積算</button>
+  <div class="link-legend"><b>🔗 緑の欄</b>は全タブ連動。1か所に入れればほかのタブにも入る</div>
 </div>
 
 <!-- タブ1：単価・変換 -->
@@ -1827,7 +1848,10 @@ LINKED.forEach(group => group.forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
   linkOf[id] = group;
-  const label = el.closest('.field') && el.closest('.field').querySelector('label');
+  el.classList.add('linked');
+  const field = el.closest('.field');
+  const label = field && field.querySelector('label');
+  if (field) field.classList.add('is-linked');
   if (label) label.insertAdjacentHTML('beforeend', ' <span class="link-mark" title="ほかのタブと連動">🔗</span>');
 }));
 
