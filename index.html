@@ -2057,9 +2057,19 @@ document.querySelectorAll('.tab-content').forEach(tab => {
 // 入力のたびに保存。数字欄はタップしたら全選択して打ち直しやすく
 document.addEventListener('input', saveState);
 document.addEventListener('change', saveState);
+// 遅れて全選択すると、素早く打った最初の文字が消えるので、フォーカスした瞬間に選択する
+let justFocused = null;
 document.addEventListener('focusin', e => {
-  if (e.target.matches('input[type="number"]')) setTimeout(() => e.target.select(), 0);
+  if (!e.target.matches('input[type="number"]')) return;
+  try { e.target.select(); } catch (err) {}
+  justFocused = e.target;
 });
+// クリックのマウスを離したときに選択が外れないようにする（1回だけ）
+document.addEventListener('mouseup', e => {
+  if (justFocused && e.target === justFocused) e.preventDefault();
+  justFocused = null;
+});
+document.addEventListener('keydown', () => { justFocused = null; });
 
 restoreState();
 calcCF();
