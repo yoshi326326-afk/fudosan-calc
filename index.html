@@ -775,8 +775,18 @@ color: var(--gold);
     </div>
     <div class="row2">
       <div class="field">
+        <label>政策金利（%）</label>
+        <input type="number" inputmode="decimal" id="l-policy" placeholder="例：1.25" step="0.25" oninput="calcLoan()">
+      </div>
+      <div class="field">
+        <label>上乗せ幅（%）</label>
+        <input type="number" inputmode="decimal" id="l-spread" placeholder="例：0.75" step="0.01" oninput="calcLoan()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
         <label>金利（年率 %）</label>
-        <input type="number" inputmode="decimal" id="l-rate" placeholder="例：0.5" step="0.01" oninput="calcLoan()">
+        <input type="number" inputmode="decimal" id="l-rate" placeholder="政策金利＋上乗せで自動" step="0.01" oninput="calcLoan()">
       </div>
       <div class="field">
         <label>返済期間（年）</label>
@@ -801,6 +811,15 @@ color: var(--gold);
         <span class="result-value" id="l-yearly">—</span>
       </div>
     </div>
+  </div>
+
+  <div class="card" id="loan-policy-card" style="display:none">
+    <div class="card-title"><span>🏛️</span>政策金利が上がったら</div>
+    <table>
+      <thead><tr><th>政策金利</th><th>金利</th><th>月々の返済</th><th>今との差（月）</th></tr></thead>
+      <tbody id="loan-policy-table"></tbody>
+    </table>
+    <p class="note">上乗せ幅はそのままで、政策金利だけが上がった場合の試算（借りた時点から最後までその金利だった場合）。変動金利は短期プライムレートに連動することが多く、短期プライムレートは政策金利とほぼ同じ幅で動いてきた（2026年11月時点：政策金利1.25%、主要行の短期プライムレート2.625%）。実際の返済額は、5年ルール・125%ルールなどで金融機関ごとに変わり方が違う。</p>
   </div>
 
   <div class="card" id="loan-balance-card" style="display:none">
@@ -1246,8 +1265,18 @@ color: var(--gold);
     </div>
     <div class="row2">
       <div class="field">
+        <label>政策金利（%）</label>
+        <input type="number" inputmode="decimal" id="pj-policy" placeholder="例：1.25" step="0.25" oninput="calcTenbai()">
+      </div>
+      <div class="field">
+        <label>上乗せ幅（%）</label>
+        <input type="number" inputmode="decimal" id="pj-spread" placeholder="例：2.25" step="0.01" oninput="calcTenbai()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
         <label>金利（年率 %）</label>
-        <input type="number" inputmode="decimal" id="tb-rate" placeholder="例：3.5" step="0.01" oninput="calcTenbai()">
+        <input type="number" inputmode="decimal" id="tb-rate" placeholder="政策金利＋上乗せで自動" step="0.01" oninput="calcTenbai()">
       </div>
       <div class="field">
         <label>事務手数料（借入の%）</label>
@@ -1363,8 +1392,18 @@ color: var(--gold);
     </div>
     <div class="row2">
       <div class="field">
+        <label>政策金利（%）</label>
+        <input type="number" inputmode="decimal" id="cf-policy" placeholder="例：1.25" step="0.25" oninput="calcCF()">
+      </div>
+      <div class="field">
+        <label>上乗せ幅（%）</label>
+        <input type="number" inputmode="decimal" id="cf-spread" placeholder="例：0.75" step="0.01" oninput="calcCF()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
         <label>金利（年率 %）</label>
-        <input type="number" inputmode="decimal" id="cf-rate" placeholder="例：2.0" step="0.01" oninput="calcCF()">
+        <input type="number" inputmode="decimal" id="cf-rate" placeholder="政策金利＋上乗せで自動" step="0.01" oninput="calcCF()">
       </div>
       <div class="field">
         <label>返済期間（年）</label>
@@ -1802,6 +1841,23 @@ function calcLoan() {
   }
   tbody.innerHTML = rows;
   document.getElementById('loan-balance-card').style.display = 'block';
+
+  // 政策金利が上がったら（上乗せ幅はそのまま）
+  const policyIn = document.getElementById('l-policy').value;
+  if (policyIn !== '') {
+    const policy = parseFloat(policyIn);
+    const pay = r => {
+      const m = r / 100 / 12;
+      return m === 0 ? amount / months : amount * m * Math.pow(1 + m, months) / (Math.pow(1 + m, months) - 1);
+    };
+    const base = pay(annualRate * 100);
+    document.getElementById('loan-policy-table').innerHTML = [0, 0.25, 0.5, 0.75, 1].map(up => {
+      const r = annualRate * 100 + up;
+      const mp = pay(r);
+      return `<tr${up === 0 ? ' class="highlight"' : ''}><td>${(policy + up).toFixed(2)}%${up ? '' : '（今）'}</td><td>${r.toFixed(2)}%</td><td>${Math.round(mp).toLocaleString()}円</td><td>${up ? '+' + Math.round(mp - base).toLocaleString() + '円' : '—'}</td></tr>`;
+    }).join('');
+  }
+  document.getElementById('loan-policy-card').style.display = policyIn !== '' ? 'block' : 'none';
 }
 
 // 諸費用
@@ -2034,7 +2090,7 @@ function tenbaiProfit(buy, opt = {}) {
   const loan = loanBase * num('tb-ltv') / 100;
   const loanFee = loan * num('tb-loan-fee') / 100;
   if (loanFee) items.push(['融資事務手数料', loanFee]);
-  const interest = loan * num('tb-rate') / 100 * months / 12;
+  const interest = loan * (num('tb-rate') + (opt.rateUp || 0)) / 100 * months / 12;
   if (interest) items.push(['保有中の金利', interest]);
 
   // 保有経費は期間に比例させる
@@ -2226,6 +2282,8 @@ function calcTenbai() {
       ['価格 −10%', { sell: sellUse * 0.9 }],
       ['販売 +3ヶ月', { months: base + 3 }],
       ['販売 +6ヶ月', { months: base + 6 }],
+      ['金利 +0.5%', { rateUp: 0.5 }],
+      ['金利 +1%', { rateUp: 1 }],
       ['−10% かつ +6ヶ月', { sell: sellUse * 0.9, months: base + 6 }],
     ];
     document.getElementById('tb-stress').innerHTML = cases.map(([label, opt]) => {
@@ -2337,7 +2395,9 @@ function calcCF() {
       const ads = adsAt(r);
       const btcf = year1.noi - ads;
       const color = btcf < 0 ? ' style="color:#e57373"' : '';
-      return `<tr${up === 0 ? ' class="highlight"' : ''}><td>${r.toFixed(2)}%${up ? '（+' + up + '）' : '（今）'}</td><td>${ads.toFixed(1)}</td><td${color}>${btcf.toFixed(1)}</td><td>${(year1.noi / ads).toFixed(2)}倍</td></tr>`;
+      const pol = document.getElementById('cf-policy').value;
+      const polText = pol !== '' ? '<br><span style="font-size:10px;color:var(--text2)">政策金利' + (parseFloat(pol) + up).toFixed(2) + '%</span>' : '';
+      return `<tr${up === 0 ? ' class="highlight"' : ''}><td>${r.toFixed(2)}%${up ? '（+' + up + '）' : '（今）'}${polText}</td><td>${ads.toFixed(1)}</td><td${color}>${btcf.toFixed(1)}</td><td>${(year1.noi / ads).toFixed(2)}倍</td></tr>`;
     }).join('');
     let lo = 0, hi = 30;
     if (year1.noi - adsAt(hi) > 0) {
@@ -2633,9 +2693,10 @@ const SUMMARY = {
     ['o', 'inv-price-hyomen', '表面利回りで見た価格'], ['o', 'inv-price-jissitu', '実質利回りで見た価格'],
   ],
   loan: [
-    ['i', 'l-amount', '借入金額', '万円'], ['i', 'l-rate', '金利', '%'], ['i', 'l-years', '返済期間', '年'],
+    ['i', 'l-amount', '借入金額', '万円'], ['i', 'l-policy', '政策金利', '%'], ['i', 'l-spread', '上乗せ幅', '%'],
+    ['i', 'l-rate', '金利', '%'], ['i', 'l-years', '返済期間', '年'],
     ['o', 'l-monthly', '月々の返済'], ['o', 'l-yearly', '年間返済'], ['o', 'l-total', '総返済額'], ['o', 'l-interest', '利息の合計'],
-    ['tb', 'loan-balance-table', '残高の推移'],
+    ['tb', 'loan-policy-table', '政策金利が上がったら'], ['tb', 'loan-balance-table', '残高の推移'],
   ],
   shohi: [
     ['i', 's-price', '物件価格', '万円'], ['i', 's-type', '種別'], ['i', 's-loan', '借入金額', '万円'],
@@ -2663,7 +2724,7 @@ const SUMMARY = {
   ],
   pj: [
     ['i', 'pj-buy', '仕入価格', '万円'], ['i', 'tb-loan-base', '融資の対象'], ['i', 'tb-ltv', '融資割合', '%'],
-    ['i', 'tb-rate', '金利', '%'], ['i', 'tb-loan-fee', '事務手数料', '%'], ['i', 'tb-loan-term', '融資期間', 'ヶ月'],
+    ['i', 'pj-policy', '政策金利', '%'], ['i', 'pj-spread', '上乗せ幅', '%'], ['i', 'tb-rate', '金利', '%'], ['i', 'tb-loan-fee', '事務手数料', '%'], ['i', 'tb-loan-term', '融資期間', 'ヶ月'],
     ['o', 'pj-loan', '借入額'], ['o', 'pj-interest', '保有期間中の利息'], ['o', 'pj-monthly', '月々の利息'],
     ['o', 'pj-equity', '必要な自己資金'], ['o', 'tb-warn', '注意'],
     ['h', '必要なキャッシュ'], ['i', 'tb-int-mode', '利息の払い方'],
@@ -2674,7 +2735,7 @@ const SUMMARY = {
   ],
   cf: [
     ['h', '条件'], ['i', 'cf-price', '物件価格', '万円'], ['i', 'cf-cost', '購入諸費用', '万円'], ['i', 'cf-loan', '借入金額', '万円'],
-    ['i', 'cf-rate', '金利', '%'], ['i', 'cf-years', '返済期間', '年'], ['i', 'cf-mrent', '満室時の月額家賃', '円'], ['i', 'cf-gpi', '満室時の年間家賃', '万円'],
+    ['i', 'cf-policy', '政策金利', '%'], ['i', 'cf-spread', '上乗せ幅', '%'], ['i', 'cf-rate', '金利', '%'], ['i', 'cf-years', '返済期間', '年'], ['i', 'cf-mrent', '満室時の月額家賃', '円'], ['i', 'cf-gpi', '満室時の年間家賃', '万円'],
     ['i', 'cf-kanri', '管理費（月）', '円'], ['i', 'cf-shuzen', '修繕積立金（月）', '円'], ['i', 'cf-other', 'その他の年間経費', '万円'],
     ['i', 'cf-vac', '空室率', '%'], ['i', 'cf-opex', '運営経費率', '%'],
     ['h', '1年目の収支'], ['o', 'cf-btcf', '手残り（税引前）'], ['o', 'cf-dscr', '返済余裕率'], ['o', 'cf-ccr', '自己資金の利回り'],
@@ -3023,7 +3084,9 @@ const LINKED = [
   ['r-mrent', 'cf-mrent', 'tb-mrent'],                                         // 月額家賃（円）
   ['r-kanri', 'cf-kanri'],                                                    // 管理費（円/月）
   ['r-shuzen', 'cf-shuzen'],                                                  // 修繕積立金（円/月）
-  ['r-other', 'cf-other'],                                                    // その他の年間経費                                           // 年間家賃
+  ['r-other', 'cf-other'],                                                    // その他の年間経費
+  ['l-policy', 'cf-policy', 'pj-policy'],                                     // 政策金利
+  ['l-spread', 'cf-spread'],                                                  // 上乗せ幅（長期ローン）                                           // 年間家賃
   ['r-cost', 'inv-cost'],                                                     // 年間経費
   ['l-amount', 's-loan', 'cf-loan'],                                          // 借入金額
   ['l-rate', 'cf-rate'],                                                      // 金利（長期ローン）
@@ -3050,7 +3113,32 @@ const COST_PARTS = ['r-kanri', 'r-shuzen', 'r-other'];
 
 function setGroup(ids, v) { ids.forEach(id => setValue(id, v)); }
 
+const POLICY_IDS = ['l-policy', 'cf-policy', 'pj-policy'];
+const round3 = v => Math.round(v * 1000) / 1000;
+
+function derivePolicy(id) {
+  const pol = document.getElementById('l-policy').value;
+  const spread = document.getElementById('l-spread').value;
+  const pjSpread = document.getElementById('pj-spread').value;
+  if (POLICY_IDS.includes(id) || id === 'l-spread' || id === 'cf-spread') {
+    if (pol !== '' && spread !== '') setGroup(['l-rate', 'cf-rate'], round3(parseFloat(pol) + parseFloat(spread)));
+  }
+  if (POLICY_IDS.includes(id) || id === 'pj-spread') {
+    if (pol !== '' && pjSpread !== '') setValue('tb-rate', round3(parseFloat(pol) + parseFloat(pjSpread)));
+  }
+  // 金利を直接入れたら、上乗せ幅を逆算する
+  if ((id === 'l-rate' || id === 'cf-rate') && pol !== '') {
+    const r = document.getElementById(id).value;
+    if (r !== '') setGroup(['l-spread', 'cf-spread'], round3(parseFloat(r) - parseFloat(pol)));
+  }
+  if (id === 'tb-rate' && pol !== '') {
+    const r = document.getElementById('tb-rate').value;
+    if (r !== '') setValue('pj-spread', round3(parseFloat(r) - parseFloat(pol)));
+  }
+}
+
 function deriveFrom(id) {
+  derivePolicy(id);
   if (RENT_MONTHLY.includes(id)) {
     const v = document.getElementById(id).value;
     setGroup(RENT_ANNUAL, v === '' ? '' : Math.round(parseFloat(v) * 12 / 100) / 100);
@@ -3066,6 +3154,7 @@ function deriveFrom(id) {
 }
 
 document.addEventListener('input', e => {
+  if (['pj-spread', 'tb-rate'].includes(e.target.id)) { derivePolicy(e.target.id); recalcAll(); return; }
   const group = linkOf[e.target.id];
   if (!group) return;
   group.forEach(id => {
