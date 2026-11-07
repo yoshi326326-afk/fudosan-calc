@@ -145,6 +145,8 @@ transition: all 0.25s;
 z-index: 200;
 }
 
+.link-mark { font-size: 10px; opacity: 0.7; }
+
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 .tab {
@@ -727,21 +729,42 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
         <input type="number" inputmode="decimal" id="tb-months" value="6" oninput="calcTenbai()">
       </div>
     </div>
-    <div class="row2">
-      <div class="field">
-        <label>融資割合（仕入価格の%）</label>
-        <input type="number" inputmode="decimal" id="tb-ltv" placeholder="例：90" oninput="calcTenbai()">
-      </div>
-      <div class="field">
-        <label>金利（年率 %）</label>
-        <input type="number" inputmode="decimal" id="tb-rate" placeholder="例：2.5" step="0.01" oninput="calcTenbai()">
-      </div>
-    </div>
     <div class="field">
       <label>保有中の経費（固都税・管理費など／万円）</label>
       <input type="number" inputmode="decimal" id="tb-hold" placeholder="例：15" oninput="calcTenbai()">
     </div>
-    <div class="note">金利は保有期間中の利息だけで計算する（元本は売却時に一括返済する想定）。</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🏦</span>プロジェクトローン</div>
+    <div class="row2">
+      <div class="field">
+        <label>融資の対象</label>
+        <select id="tb-loan-base" onchange="calcTenbai()">
+          <option value="buy">仕入価格のみ</option>
+          <option value="reform">仕入価格＋リフォーム</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>融資割合（%）</label>
+        <input type="number" inputmode="decimal" id="tb-ltv" placeholder="例：90" oninput="calcTenbai()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>金利（年率 %）</label>
+        <input type="number" inputmode="decimal" id="tb-rate" placeholder="例：3.5" step="0.01" oninput="calcTenbai()">
+      </div>
+      <div class="field">
+        <label>事務手数料（借入の%）</label>
+        <input type="number" inputmode="decimal" id="tb-loan-fee" placeholder="例：1.1" step="0.1" oninput="calcTenbai()">
+      </div>
+    </div>
+    <div class="field">
+      <label>融資期間（ヶ月）※この月までに売って返す</label>
+      <input type="number" inputmode="decimal" id="tb-loan-term" placeholder="例：12" oninput="calcTenbai()">
+    </div>
+    <div class="note">利息は保有期間中の分だけ計算し、元本は売却代金で一括返済する想定（期日一括返済）。金融機関によっては毎月利息を払う方式や、手数料が別にかかる場合がある。</div>
   </div>
 
   <div class="card">
@@ -792,6 +815,14 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
         <span class="result-label">自己資金に対する利益率（年換算）</span>
         <span class="result-value" id="tb-roe">—</span>
       </div>
+      <div class="result-item" id="tb-loan-row" style="display:none">
+        <span class="result-label">借入額</span>
+        <span class="result-value" id="tb-loan">—</span>
+      </div>
+      <div class="result-item" id="tb-warn-row" style="display:none">
+        <span class="result-label">⚠️ 期日</span>
+        <span class="result-value" id="tb-warn" style="color:#e57373">—</span>
+      </div>
     </div>
   </div>
 
@@ -801,6 +832,15 @@ tr.highlight td { color: var(--gold); font-weight: 500; }
       <thead><tr><th>項目</th><th>金額</th></tr></thead>
       <tbody id="tb-table"></tbody>
     </table>
+  </div>
+
+  <div class="card" id="tb-stress-card" style="display:none">
+    <div class="card-title"><span>🧪</span>売れなかったときの試算</div>
+    <table>
+      <thead><tr><th>ケース</th><th>粗利</th><th>利益率</th></tr></thead>
+      <tbody id="tb-stress"></tbody>
+    </table>
+    <div class="note">販売価格の値下げと、販売が長引いたとき（金利・保有経費が増える）の利益。プロジェクトローンは売却代金で返すので、ここで赤字にならないかを見ておくと安全。融資期間を超えるケースは「期日超過」と表示する。</div>
   </div>
 
   <div class="card">
@@ -1353,12 +1393,14 @@ function chukaiFee(p) {
 }
 
 // ===== 転売の利益計算 =====
-function tenbaiProfit(buy) {
+function tenbaiProfit(buy, opt = {}) {
   const landEval = num('tb-land-eval');
   const bldEval = num('tb-bld-eval');
-  const months = num('tb-months');
-  const sell = num('tb-sell');
-  const sellBld = Math.min(num('tb-sell-bld'), sell);
+  const baseMonths = num('tb-months');
+  const months = opt.months ?? baseMonths;
+  const baseSell = num('tb-sell');
+  const sell = opt.sell ?? baseSell;
+  const sellBld = baseSell > 0 ? Math.min(num('tb-sell-bld'), baseSell) * sell / baseSell : 0;
 
   const items = [];
   const buyFee = document.getElementById('tb-buy-fee').value === 'yes' ? chukaiFee(buy) : 0;
@@ -1376,11 +1418,16 @@ function tenbaiProfit(buy) {
   const reform = num('tb-reform');
   if (reform) items.push(['リフォーム費用', reform]);
 
-  const loan = buy * num('tb-ltv') / 100;
+  // プロジェクトローン
+  const loanBase = buy + (document.getElementById('tb-loan-base').value === 'reform' ? reform : 0);
+  const loan = loanBase * num('tb-ltv') / 100;
+  const loanFee = loan * num('tb-loan-fee') / 100;
+  if (loanFee) items.push(['融資事務手数料', loanFee]);
   const interest = loan * num('tb-rate') / 100 * months / 12;
   if (interest) items.push(['保有中の金利', interest]);
 
-  const hold = num('tb-hold');
+  // 保有経費は期間に比例させる
+  const hold = baseMonths > 0 ? num('tb-hold') * months / baseMonths : num('tb-hold');
   if (hold) items.push(['保有中の経費', hold]);
 
   const outputTax = sellBld * 10 / 110;
@@ -1397,8 +1444,8 @@ function tenbaiProfit(buy) {
   const cost = items.reduce((s, [, v]) => s + v, 0);
   const profit = sell - buy - cost;
   // 売却までに出ていくお金から借入を引いたもの
-  const equity = buy + buyFee + reg + acq + buyOther + reform + interest + hold - loan;
-  return { items, profit, salesExTax, equity, months };
+  const equity = buy + buyFee + reg + acq + buyOther + reform + loanFee + interest + hold - loan;
+  return { items, profit, salesExTax, equity, months, loan };
 }
 
 function calcTenbai() {
@@ -1417,6 +1464,32 @@ function calcTenbai() {
     document.getElementById('tb-roe').textContent = '—';
   }
   document.getElementById('tb-result').style.display = 'grid';
+
+  // プロジェクトローンの表示
+  const term = num('tb-loan-term');
+  document.getElementById('tb-loan-row').style.display = r.loan > 0 ? 'flex' : 'none';
+  document.getElementById('tb-loan').textContent = man(r.loan);
+  const over = r.loan > 0 && term > 0 && r.months > term;
+  document.getElementById('tb-warn-row').style.display = over ? 'flex' : 'none';
+  document.getElementById('tb-warn').textContent = over ? '保有期間が融資期間を' + (r.months - term) + 'ヶ月超えている' : '';
+
+  // 売れなかったときの試算
+  const base = num('tb-months');
+  const cases = [
+    ['予定どおり', {}],
+    ['価格 −5%', { sell: sell * 0.95 }],
+    ['価格 −10%', { sell: sell * 0.9 }],
+    ['販売 +3ヶ月', { months: base + 3 }],
+    ['販売 +6ヶ月', { months: base + 6 }],
+    ['−10% かつ +6ヶ月', { sell: sell * 0.9, months: base + 6 }],
+  ];
+  document.getElementById('tb-stress').innerHTML = cases.map(([label, opt]) => {
+    const c = tenbaiProfit(buy, opt);
+    const late = r.loan > 0 && term > 0 && c.months > term ? '（期日超過）' : '';
+    const color = c.profit < 0 ? ' style="color:#e57373"' : '';
+    return `<tr><td>${label}${late}</td><td${color}>${man(c.profit)}</td><td${color}>${c.salesExTax > 0 ? pct(c.profit / c.salesExTax, 1) : '—'}</td></tr>`;
+  }).join('');
+  document.getElementById('tb-stress-card').style.display = 'block';
 
   const total = r.items.reduce((s, [, v]) => s + v, 0);
   document.getElementById('tb-table').innerHTML =
@@ -1660,7 +1733,7 @@ function tabText(tab) {
       const v = el.tagName === 'SELECT' ? el.selectedOptions[0].text : el.value;
       if (!v) return;
       if (el.tagName !== 'SELECT') hasData = true;
-      part.push('・' + label.innerText.trim() + '：' + v);
+      part.push('・' + label.innerText.replace('🔗', '').trim() + '：' + v);
     });
     card.querySelectorAll('.result-item').forEach(r => {
       if (r.offsetParent === null) return;
@@ -1737,6 +1810,39 @@ function sendShohi() {
   switchTab('cf');
   showToast('価格と諸費用を入れました');
 }
+
+// 同じ意味の欄は、どこか1か所に入れると全タブに反映する
+const LINKED = [
+  ['price', 'r-price', 's-price', 'c-price', 'cf-price', 'sk-price', 'tb-buy'], // 物件価格
+  ['r-rent', 'inv-rent', 'cf-gpi'],                                           // 年間家賃
+  ['r-cost', 'inv-cost'],                                                     // 年間経費
+  ['l-amount', 's-loan', 'cf-loan'],                                          // 借入金額
+  ['l-rate', 'cf-rate'],                                                      // 金利（長期ローン）
+  ['l-years', 'cf-years'],                                                    // 返済期間
+  ['t-bldprice', 'cf-bld'],                                                   // 建物価格
+  ['sqm', 'area_sqm'],                                                        // 面積（㎡）
+];
+const linkOf = {};
+LINKED.forEach(group => group.forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  linkOf[id] = group;
+  const label = el.closest('.field') && el.closest('.field').querySelector('label');
+  if (label) label.insertAdjacentHTML('beforeend', ' <span class="link-mark" title="ほかのタブと連動">🔗</span>');
+}));
+
+document.addEventListener('input', e => {
+  const group = linkOf[e.target.id];
+  if (!group) return;
+  group.forEach(id => {
+    if (id !== e.target.id) document.getElementById(id).value = e.target.value;
+  });
+  if (group.includes('sqm')) {
+    const v = parseFloat(e.target.value);
+    document.getElementById('tsubo').value = isNaN(v) ? '' : (v / 3.30579).toFixed(2);
+  }
+  recalcAll();
+}, true);
 
 // 各タブの下に「コピー」「クリア」ボタンを付ける
 document.querySelectorAll('.tab-content').forEach(tab => {
