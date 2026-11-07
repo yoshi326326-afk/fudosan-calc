@@ -635,44 +635,45 @@ color: var(--gold);
 
 <div id="tab-tanka" class="tab-content active">
   <div class="card">
-    <div class="card-title"><span>📐</span>平米 ↔ 坪 変換</div>
+    <div class="card-title"><span>📐</span>面積と単価</div>
     <div class="row2">
       <div class="field">
-        <label>平米数（㎡）</label>
+        <label>面積（㎡）</label>
         <input type="number" inputmode="decimal" id="sqm" placeholder="例：80" oninput="convertArea('sqm')">
       </div>
       <div class="field">
-        <label>坪数（坪）</label>
+        <label>面積（坪）</label>
         <input type="number" inputmode="decimal" id="tsubo" placeholder="例：24.2" oninput="convertArea('tsubo')">
       </div>
     </div>
-    <div class="note">1坪 = 3.30579㎡</div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span>💴</span>単価計算</div>
     <div class="field">
-      <label>物件価格（万円）</label>
+      <label>価格（万円）</label>
       <input type="number" inputmode="decimal" id="price" placeholder="例：3500" oninput="calcTanka()">
     </div>
-    <div class="field">
-      <label>面積（㎡）</label>
-      <input type="number" inputmode="decimal" id="area_sqm" placeholder="例：80" oninput="calcTanka()">
-    </div>
     <div class="result-grid" id="tanka-result" style="display:none">
-      <div class="result-item">
-        <span class="result-label">平米単価</span>
-        <span class="result-value big" id="r-sqm-price">—</span>
-      </div>
       <div class="result-item">
         <span class="result-label">坪単価</span>
         <span class="result-value big" id="r-tsubo-price">—</span>
       </div>
       <div class="result-item">
-        <span class="result-label">面積（坪換算）</span>
-        <span class="result-value" id="r-tsubo-area">—</span>
+        <span class="result-label">㎡単価</span>
+        <span class="result-value" id="r-sqm-price">—</span>
       </div>
     </div>
+
+    <hr class="divider">
+    <div class="field">
+      <label>坪単価から価格を出す（万円/坪）</label>
+      <input type="number" inputmode="decimal" id="tk-unit" placeholder="例：120" oninput="calcTanka()">
+    </div>
+    <div class="result-grid" id="tk-rev-result" style="display:none">
+      <div class="result-item">
+        <span class="result-label" id="tk-rev-label">この坪単価での価格</span>
+        <span class="result-value big" id="tk-rev">—</span>
+      </div>
+    </div>
+    <button class="link-btn" id="tk-to-price" style="display:none" onclick="useTankaPrice()">この価格を「価格」に入れる（ほかのタブにも入る）↑</button>
+    <div class="note">面積は㎡と坪のどちらに入れても、もう片方が自動で入る。1坪＝3.30579㎡。価格は、ほかのタブの物件価格と連動している。</div>
   </div>
 
   <div class="card">
@@ -736,8 +737,22 @@ color: var(--gold);
   <div class="card">
     <div class="card-title"><span>📈</span>利回り計算</div>
     <div class="field">
-      <label>物件価格（万円）</label>
-      <input type="number" inputmode="decimal" id="r-price" placeholder="例：3000" oninput="calcRimawari()">
+      <label>物件の種類</label>
+      <select id="r-ptype" onchange="onPtype()">
+        <option value="kubun">区分マンション</option>
+        <option value="itto">一棟アパート・マンション</option>
+        <option value="house">戸建・その他</option>
+      </select>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>物件価格（万円）</label>
+        <input type="number" inputmode="decimal" id="r-price" placeholder="例：3000" oninput="calcRimawari()">
+      </div>
+      <div class="field">
+        <label>購入諸費用（万円）</label>
+        <input type="number" inputmode="decimal" id="r-buycost" placeholder="例：200" oninput="calcRimawari()">
+      </div>
     </div>
     <div class="row2">
       <div class="field">
@@ -749,13 +764,13 @@ color: var(--gold);
         <input type="number" inputmode="decimal" id="r-rent" placeholder="月額から自動" oninput="calcRimawari()">
       </div>
     </div>
-    <div class="row2">
+    <div class="row2 kubun-only">
       <div class="field">
-        <label>管理費（円/月）</label>
+        <label>管理費（区分・円/月）</label>
         <input type="number" inputmode="numeric" id="r-kanri" placeholder="例：12000" oninput="calcRimawari()">
       </div>
       <div class="field">
-        <label>修繕積立金（円/月）</label>
+        <label>修繕積立金（区分・円/月）</label>
         <input type="number" inputmode="numeric" id="r-shuzen" placeholder="例：10000" oninput="calcRimawari()">
       </div>
     </div>
@@ -773,7 +788,7 @@ color: var(--gold);
         <span class="result-value big" id="r-hyomen">—</span>
       </div>
       <div class="result-item">
-        <span class="result-label">実質利回り</span>
+        <span class="result-label">実質利回り（経費・諸費用込み）</span>
         <span class="result-value big green" id="r-jissitu">—</span>
       </div>
       <div class="result-item">
@@ -949,7 +964,7 @@ color: var(--gold);
         <span class="result-value" id="s-later" style="color:var(--gold)">—</span>
       </div>
       <button class="link-btn" onclick="sendShohi()">この価格と諸費用を「収支・売却」に入れる →</button>
-      <p class="note">※概算。登録免許税：土地の移転1.5%（令和11年3月末まで）、建物の移転2%・新築の保存0.4%・抵当権0.4%。自己居住用の住宅は、条件を満たせば建物の移転0.3%・保存0.15%・抵当権0.1%。不動産取得税：土地は評価額の1/2に3%、建物は住宅3%・住宅以外4%。新築住宅の1,200万円控除などの住宅向けの控除は入れていないので、該当すると取得税はさらに下がる。印紙税は令和9年3月末までの軽減税率。⏰の不動産取得税は、決済の時ではなく、登記のあと都道府県から納税通知書が届いてから払う（届く時期は都道府県で違い、例えば栃木県は登記完了から4〜6か月後）。仲介手数料は、契約時に半金・決済時に残金を払う形が多い。</p>
+      <p class="note">※概算。登録免許税：土地の移転1.5%（令和11年3月末まで）、建物の移転2%・新築の保存0.4%・抵当権0.4%。自己居住用の住宅は、条件を満たせば建物の移転0.3%・保存0.15%・抵当権0.1%。不動産取得税：土地は評価額の1/2に3%、建物は住宅3%・住宅以外4%。新築住宅の1,200万円控除などの住宅向けの控除は入れていないので、該当すると取得税はさらに下がる。印紙税は令和9年3月末までの軽減税率。⏰の不動産取得税は、決済の時ではなく、登記のあと都道府県から納税通知書が届いてから払う（届く時期は都道府県で違い、例えば栃木県は登記完了から4〜6か月後）。仲介手数料は、契約時に半金・決済時に残金を払う形が多い。ここの仲介手数料は物件価格そのもので計算している。売主が業者で建物に消費税がかかる場合は、「仲介手数料」タブで消費税を除いた正確な額を確認すること。</p>
     </div>
   </div>
 </div>
@@ -1136,7 +1151,7 @@ color: var(--gold);
       <label>司法書士・印紙など仕入時の経費（万円）</label>
       <input type="number" inputmode="decimal" id="tb-buy-other" placeholder="例：20" oninput="calcTenbai()">
     </div>
-    <div class="note">登録免許税＝土地評価額×1.5%（令和11年3月末までの軽減）＋建物評価額×2%。不動産取得税＝土地評価額×1/2×3%＋建物評価額×用途の税率。買取再販の減額特例は入れていないので、使える場合は税額が下がる。</div>
+    <div class="note">評価額が両方とも空欄のときは、仕入価格の7割を評価額とみなし、土地と建物を「建物の割合」（空欄なら半分ずつ）で分けて仮計算する（内訳に「（仮）」と出る）。登録免許税＝土地評価額×1.5%（令和11年3月末までの軽減）＋建物評価額×2%。不動産取得税＝土地評価額×1/2×3%＋建物評価額×用途の税率。買取再販の減額特例は入れていないので、使える場合は税額が下がる。</div>
   </div>
 
   <div class="card">
@@ -1477,6 +1492,15 @@ color: var(--gold);
 
   <div class="card">
     <div class="card-title"><span>💰</span>収入と経費</div>
+    <div class="field">
+      <label>物件の種類</label>
+      <select id="cf-ptype" onchange="onPtype()">
+        <option value="kubun">区分マンション</option>
+        <option value="itto">一棟アパート・マンション</option>
+        <option value="house">戸建・その他</option>
+      </select>
+    </div>
+    <div class="note itto-only" style="display:none;margin:0 0 10px">部屋ごとの賃料（レントロール）から計算するなら「一棟収益」タブが便利。そこで入れた内容は、ボタンでこのタブに送れる。</div>
     <div class="row2">
       <div class="field">
         <label>満室時の月額家賃（円）</label>
@@ -1487,13 +1511,13 @@ color: var(--gold);
         <input type="number" inputmode="decimal" id="cf-gpi" placeholder="月額から自動" oninput="calcCF()">
       </div>
     </div>
-    <div class="row2">
+    <div class="row2 kubun-only">
       <div class="field">
-        <label>管理費（円/月）</label>
+        <label>管理費（区分・円/月）</label>
         <input type="number" inputmode="numeric" id="cf-kanri" placeholder="例：12000" oninput="calcCF()">
       </div>
       <div class="field">
-        <label>修繕積立金（円/月）</label>
+        <label>修繕積立金（区分・円/月）</label>
         <input type="number" inputmode="numeric" id="cf-shuzen" placeholder="例：10000" oninput="calcCF()">
       </div>
     </div>
@@ -1971,33 +1995,46 @@ function fmtMan(n) {
   return Math.round(n).toLocaleString() + '万円';
 }
 
-// 平米坪変換
+// 面積（㎡ ⇔ 坪）
 function convertArea(from) {
   const sqm = document.getElementById('sqm');
   const tsubo = document.getElementById('tsubo');
-  if (from === 'sqm' && sqm.value) {
-    tsubo.value = (parseFloat(sqm.value) / 3.30579).toFixed(2);
-    document.getElementById('area_sqm').value = sqm.value;
-    calcTanka();
-  } else if (from === 'tsubo' && tsubo.value) {
-    sqm.value = (parseFloat(tsubo.value) * 3.30579).toFixed(2);
-    document.getElementById('area_sqm').value = sqm.value;
-    calcTanka();
+  if (from === 'sqm') {
+    tsubo.value = sqm.value === '' ? '' : (parseFloat(sqm.value) / 3.30579).toFixed(2);
+  } else {
+    sqm.value = tsubo.value === '' ? '' : (parseFloat(tsubo.value) * 3.30579).toFixed(2);
+  }
+  calcTanka();
+}
+
+// 単価
+function calcTanka() {
+  const price = num('price');
+  const area = num('sqm');
+  // 坪の欄に入っている数字をそのまま使う（㎡からの換算で端数が出ないように）
+  const tsuboArea = num('tsubo') || area / 3.30579;
+  show('tanka-result', !!(price && area), 'grid');
+  if (price && area) {
+    document.getElementById('r-tsubo-price').textContent = (price / tsuboArea).toFixed(2) + '万円/坪';
+    document.getElementById('r-sqm-price').textContent = (price / area).toFixed(2) + '万円/㎡';
+  }
+  // 坪単価から価格
+  const unit = num('tk-unit');
+  show('tk-rev-result', !!(unit && area), 'grid');
+  show('tk-to-price', !!(unit && area), 'block');
+  if (unit && area) {
+    document.getElementById('tk-rev-label').textContent = '坪' + unit.toLocaleString('ja-JP') + '万円 × ' + tsuboArea.toFixed(2) + '坪';
+    document.getElementById('tk-rev').textContent = man(Math.round(unit * tsuboArea * 10) / 10);
   }
 }
 
-// 単価計算
-function calcTanka() {
-  const price = parseFloat(document.getElementById('price').value);
-  const area = parseFloat(document.getElementById('area_sqm').value);
-  if (!price || !area) return;
-  const tsuboArea = area / 3.30579;
-  const sqmPrice = price / area;
-  const tsuboPrice = price / tsuboArea;
-  document.getElementById('r-sqm-price').textContent = sqmPrice.toFixed(2) + '万円/㎡';
-  document.getElementById('r-tsubo-price').textContent = tsuboPrice.toFixed(2) + '万円/坪';
-  document.getElementById('r-tsubo-area').textContent = tsuboArea.toFixed(2) + '坪';
-  document.getElementById('tanka-result').style.display = 'grid';
+function useTankaPrice() {
+  const v = Math.round(num('tk-unit') * (num('tsubo') || num('sqm') / 3.30579) * 10) / 10;
+  if (!v) return;
+  const el = document.getElementById('price');
+  el.value = v;
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+  showToast('価格 ' + v.toLocaleString('ja-JP') + '万円 を入れました');
 }
 
 // ===== 一棟収益 =====
@@ -2200,9 +2237,11 @@ function sendItto() {
   setValue('cf-opex', (pmIn !== '' ? parseFloat(pmIn) : 5) + (repIn !== '' ? parseFloat(repIn) : 5));
   const fixed = (num('it-bm') + num('it-util')) * 12 / 10000 + num('it-tax') + num('it-ins') + num('it-other');
   ['cf-kanri', 'cf-shuzen', 'r-kanri', 'r-shuzen'].forEach(id => setValue(id, ''));
+  ['cf-ptype', 'r-ptype'].forEach(id => setValue(id, 'itto'));
+  applyPtype();
   ['cf-other', 'r-other'].forEach(id => setValue(id, fixed ? Math.round(fixed * 100) / 100 : ''));
   deriveFrom('r-other');
-  ['cf-cost'].forEach(id => setValue(id, document.getElementById('it-cost').value));
+  ['cf-cost', 'r-buycost'].forEach(id => setValue(id, document.getElementById('it-cost').value));
   recalcAll();
   switchTab('cf');
   showToast('一棟の家賃・空室率・経費を収支に入れました');
@@ -2253,10 +2292,12 @@ function calcRimawari() {
   const price = parseFloat(document.getElementById('r-price').value);
   const rent = parseFloat(document.getElementById('r-rent').value);
   const cost = parseFloat(document.getElementById('r-cost').value) || 0;
+  const buyCost = num('r-buycost');
   if (!price || !rent) return;
   const hyomen = (rent / price * 100).toFixed(2);
-  const jissitu = ((rent - cost) / price * 100).toFixed(2);
-  const kaishu = rent > cost ? (price / (rent - cost)).toFixed(1) : null;
+  // 実質利回り＝（家賃−経費）÷（物件価格＋購入諸費用）
+  const jissitu = ((rent - cost) / (price + buyCost) * 100).toFixed(2);
+  const kaishu = rent > cost ? ((price + buyCost) / (rent - cost)).toFixed(1) : null;
   document.getElementById('r-hyomen').textContent = hyomen + '%';
   document.getElementById('r-jissitu').textContent = jissitu + '%';
   document.getElementById('r-kaishu').textContent = kaishu ? kaishu + '年' : '回収できない';
@@ -2555,8 +2596,17 @@ function chukaiFee(p) {
 
 // ===== 転売の利益計算 =====
 function tenbaiProfit(buy, opt = {}) {
-  const landEval = num('tb-land-eval');
-  const bldEval = num('tb-bld-eval');
+  // 評価額が両方空欄なら、仕入価格の7割を評価額とみなす（建物の割合は販売の建物割合、空欄なら半分）
+  let landEval = num('tb-land-eval');
+  let bldEval = num('tb-bld-eval');
+  const guessed = document.getElementById('tb-land-eval').value === '' && document.getElementById('tb-bld-eval').value === '';
+  if (guessed) {
+    const ratioIn = document.getElementById('tb-bld-ratio').value;
+    const bldShare = ratioIn !== '' ? Math.min(parseFloat(ratioIn), 100) / 100 : 0.5;
+    landEval = buy * 0.7 * (1 - bldShare);
+    bldEval = buy * 0.7 * bldShare;
+  }
+  const mark = guessed ? '（仮）' : '';
   const baseMonths = num('tb-months');
   const months = opt.months ?? baseMonths;
   const sell = opt.sell ?? num('tb-sell');
@@ -2567,10 +2617,10 @@ function tenbaiProfit(buy, opt = {}) {
   if (buyFee) items.push(['仕入の仲介手数料', buyFee]);
 
   const reg = landEval * num('tb-land-reg') / 100 + bldEval * 0.02;
-  if (reg) items.push(['登録免許税', reg]);
+  if (reg) items.push(['登録免許税' + mark, reg]);
 
   const acq = landEval * 0.5 * 0.03 + bldEval * parseFloat(document.getElementById('tb-use').value) / 100;
-  if (acq) items.push(['不動産取得税', acq]);
+  if (acq) items.push(['不動産取得税' + mark, acq]);
 
   const buyOther = num('tb-buy-other');
   if (buyOther) items.push(['仕入時の経費', buyOther]);
@@ -2819,7 +2869,7 @@ function calcCF() {
 
   const vac = num('cf-vac') / 100;
   // 管理費・積立金などを金額で入れた場合はそれを経費にし、率は空欄なら0%
-  const fixedCost = (num('cf-kanri') + num('cf-shuzen')) * 12 / 10000 + num('cf-other');
+  const fixedCost = (isKubun() ? (num('cf-kanri') + num('cf-shuzen')) * 12 / 10000 : 0) + num('cf-other');
   const opexIn = document.getElementById('cf-opex').value;
   const opex = (opexIn !== '' ? parseFloat(opexIn) : (fixedCost > 0 ? 0 : 20)) / 100;
   document.getElementById('cf-opex').placeholder = fixedCost > 0 ? '空欄なら0' : '空欄なら20';
@@ -3035,6 +3085,7 @@ function loadValues(values) {
     document.getElementById('tsubo').value = (parseFloat(values.sqm) / 3.30579).toFixed(2);
   }
   setSekisanUnit();
+  applyPtype();
   lastRR = null; // レントロールを描き直す
   recalcAll();
 }
@@ -3180,14 +3231,15 @@ function tabText(tab) {
 // ['h', 見出し] / ['i', 入力id, 名前, 単位] / ['o', 結果id, 名前] / ['tb', 表のtbody id, 表の名前]
 const SUMMARY = {
   tanka: [
-    ['i', 'sqm', '面積', '㎡'], ['o', 'r-tsubo-area', '坪数'], ['i', 'price', '価格', '万円'],
+    ['i', 'sqm', '面積', '㎡'], ['i', 'tsubo', '面積（坪）', '坪'], ['i', 'price', '価格', '万円'],
     ['o', 'r-tsubo-price', '坪単価'], ['o', 'r-sqm-price', '㎡単価'],
+    ['i', 'tk-unit', '想定の坪単価', '万円/坪'], ['o', 'tk-rev', '坪単価からの価格'],
     ['h', '賃料の坪単価'], ['i', 'rt-rent', '月額賃料', '円'], ['i', 'rt-kyoeki', '管理費・共益費', '円'], ['i', 'rt-area', '専有面積', '㎡'],
     ['o', 'rt-tsubo', '賃料の坪単価'], ['o', 'rt-tsubo-all', '管理費込みの坪単価'], ['o', 'rt-sqm', '㎡単価'], ['o', 'rt-year', '年額'],
     ['i', 'rt-unit', '想定の坪単価', '円/坪'], ['o', 'rt-rev', '想定坪単価での月額賃料'],
   ],
   rimawari: [
-    ['i', 'r-price', '物件価格', '万円'], ['i', 'r-mrent', '月額家賃', '円'], ['i', 'r-rent', '年間家賃', '万円'],
+    ['i', 'r-ptype', '物件の種類'], ['i', 'r-price', '物件価格', '万円'], ['i', 'r-buycost', '購入諸費用', '万円'], ['i', 'r-mrent', '月額家賃', '円'], ['i', 'r-rent', '年間家賃', '万円'],
     ['i', 'r-kanri', '管理費（月）', '円'], ['i', 'r-shuzen', '修繕積立金（月）', '円'], ['i', 'r-other', 'その他の年間経費', '万円'],
     ['i', 'r-cost', '年間経費', '万円'],
     ['o', 'r-hyomen', '表面利回り'], ['o', 'r-jissitu', '実質利回り'], ['o', 'r-monthly', '月額家賃'],
@@ -3361,7 +3413,7 @@ function sendShohi() {
   const total = parseFloat(document.getElementById('s-total').textContent);
   if (!price || isNaN(total)) return;
   setValue('cf-price', price);
-  setValue('cf-cost', total.toFixed(1));
+  ['cf-cost', 'it-cost', 'r-buycost'].forEach(id => setValue(id, total.toFixed(1)));
   const loan = document.getElementById('s-loan').value;
   if (loan) setValue('cf-loan', loan);
   calcCF();
@@ -3609,15 +3661,15 @@ const LINKED = [
   ['r-kanri', 'cf-kanri'],                                                    // 管理費（円/月）
   ['r-shuzen', 'cf-shuzen'],                                                  // 修繕積立金（円/月）
   ['r-other', 'cf-other'],                                                    // その他の年間経費
+  ['r-ptype', 'cf-ptype'],                                                    // 物件の種類
   ['l-policy', 'cf-policy', 'pj-policy'],                                     // 政策金利
   ['l-spread', 'cf-spread'],                                                  // 上乗せ幅（長期ローン）                                           // 年間家賃
   ['r-cost', 'inv-cost'],                                                     // 年間経費
   ['l-amount', 's-loan', 'cf-loan', 'it-loan'],                                          // 借入金額
   ['l-rate', 'cf-rate', 'it-rate'],                                                      // 金利（長期ローン）
   ['l-years', 'cf-years', 'it-years'],
-  ['cf-cost', 'it-cost'],                                                     // 購入諸費用                                                    // 返済期間
+  ['cf-cost', 'it-cost', 'r-buycost'],                                                     // 購入諸費用                                                    // 返済期間
   ['t-bldprice', 'cf-bld'],                                                   // 建物価格
-  ['sqm', 'area_sqm'],                                                        // 面積（㎡）
 ];
 const linkOf = {};
 LINKED.forEach(group => group.forEach(id => {
@@ -3630,6 +3682,22 @@ LINKED.forEach(group => group.forEach(id => {
   if (field) field.classList.add('is-linked');
   if (label) label.insertAdjacentHTML('beforeend', ' <span class="link-mark" title="ほかのタブと連動">🔗</span>');
 }));
+
+// 物件の種類：管理費・修繕積立金は区分マンションのときだけ使う
+function isKubun() { return document.getElementById('r-ptype').value === 'kubun'; }
+
+function applyPtype() {
+  const type = document.getElementById('r-ptype').value;
+  document.querySelectorAll('.kubun-only').forEach(el => { el.style.display = type === 'kubun' ? '' : 'none'; });
+  document.querySelectorAll('.itto-only').forEach(el => { el.style.display = type === 'itto' ? '' : 'none'; });
+}
+
+function onPtype() {
+  applyPtype();
+  deriveFrom('r-other');
+  recalcAll();
+  saveState();
+}
 
 // 月額と年額をつなぐ：月額を入れたら年額、年額を入れたら月額を自動で入れる
 const RENT_ANNUAL = ['r-rent', 'inv-rent', 'cf-gpi', 'tb-rent'];
@@ -3672,11 +3740,20 @@ function deriveFrom(id) {
     setGroup(RENT_MONTHLY, v === '' ? '' : Math.round(parseFloat(v) * 10000 / 12));
   } else if ((linkOf[id] || []).some(x => COST_PARTS.includes(x))) {
     // 管理費・積立金・その他から年間諸経費を作る（全部消したら年間諸経費も空欄に戻す）
-    const anyIn = COST_PARTS.some(x => document.getElementById(x).value !== '');
-    const annual = (num('r-kanri') + num('r-shuzen')) * 12 / 10000 + num('r-other');
+    const parts = isKubun() ? COST_PARTS : ['r-other'];
+    const anyIn = parts.some(x => document.getElementById(x).value !== '');
+    const annual = (isKubun() ? (num('r-kanri') + num('r-shuzen')) * 12 / 10000 : 0) + num('r-other');
     setGroup(['r-cost', 'inv-cost'], anyIn ? Math.round(annual * 100) / 100 : '');
   }
 }
+
+document.addEventListener('change', e => {
+  if (e.target.tagName !== 'SELECT') return;
+  const group = linkOf[e.target.id];
+  if (!group) return;
+  group.forEach(id => { if (id !== e.target.id) document.getElementById(id).value = e.target.value; });
+  if (e.target.id.endsWith('-ptype')) onPtype();
+}, true);
 
 document.addEventListener('input', e => {
   if (['pj-spread', 'tb-rate'].includes(e.target.id)) { derivePolicy(e.target.id); recalcAll(); return; }
@@ -3685,10 +3762,6 @@ document.addEventListener('input', e => {
   group.forEach(id => {
     if (id !== e.target.id) document.getElementById(id).value = e.target.value;
   });
-  if (group.includes('sqm')) {
-    const v = parseFloat(e.target.value);
-    document.getElementById('tsubo').value = isNaN(v) ? '' : (v / 3.30579).toFixed(2);
-  }
   deriveFrom(e.target.id);
   recalcAll();
 }, true);
