@@ -684,13 +684,33 @@ color: var(--gold);
       <label>物件価格（万円）</label>
       <input type="number" inputmode="decimal" id="r-price" placeholder="例：3000" oninput="calcRimawari()">
     </div>
+    <div class="row2">
+      <div class="field">
+        <label>月額家賃（円）</label>
+        <input type="number" inputmode="numeric" id="r-mrent" placeholder="例：150000" oninput="calcRimawari()">
+      </div>
+      <div class="field">
+        <label>年間家賃収入（万円）</label>
+        <input type="number" inputmode="decimal" id="r-rent" placeholder="月額から自動" oninput="calcRimawari()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>管理費（円/月）</label>
+        <input type="number" inputmode="numeric" id="r-kanri" placeholder="例：12000" oninput="calcRimawari()">
+      </div>
+      <div class="field">
+        <label>修繕積立金（円/月）</label>
+        <input type="number" inputmode="numeric" id="r-shuzen" placeholder="例：10000" oninput="calcRimawari()">
+      </div>
+    </div>
     <div class="field">
-      <label>年間家賃収入（万円）</label>
-      <input type="number" inputmode="decimal" id="r-rent" placeholder="例：180" oninput="calcRimawari()">
+      <label>その他の年間経費（固都税・保険など／万円）</label>
+      <input type="number" inputmode="decimal" id="r-other" placeholder="例：8" oninput="calcRimawari()">
     </div>
     <div class="field">
       <label>年間諸経費（万円）</label>
-      <input type="number" inputmode="decimal" id="r-cost" placeholder="例：20（管理費・修繕費等）" oninput="calcRimawari()">
+      <input type="number" inputmode="decimal" id="r-cost" placeholder="管理費・積立金・その他から自動" oninput="calcRimawari()">
     </div>
     <div class="result-grid" id="rimawari-result" style="display:none">
       <div class="result-item">
@@ -1106,13 +1126,17 @@ color: var(--gold);
     <div class="card-title"><span>🏢</span>収益物件として売る場合</div>
     <div class="row2">
       <div class="field">
-        <label>満室時の年間家賃（万円）</label>
-        <input type="number" inputmode="decimal" id="tb-rent" placeholder="例：300" oninput="calcTenbai()">
+        <label>満室時の月額家賃（円）</label>
+        <input type="number" inputmode="numeric" id="tb-mrent" placeholder="例：250000" oninput="calcTenbai()">
       </div>
       <div class="field">
-        <label>買主が求める表面利回り（%）</label>
-        <input type="number" inputmode="decimal" id="tb-exit-yield" placeholder="例：7.0" step="0.1" oninput="calcTenbai()">
+        <label>満室時の年間家賃（万円）</label>
+        <input type="number" inputmode="decimal" id="tb-rent" placeholder="月額から自動" oninput="calcTenbai()">
       </div>
+    </div>
+    <div class="field">
+      <label>買主が求める表面利回り（%）</label>
+      <input type="number" inputmode="decimal" id="tb-exit-yield" placeholder="例：7.0" step="0.1" oninput="calcTenbai()">
     </div>
     <div class="result-grid" id="tb-yield-result" style="display:none">
       <div class="result-item" id="tb-yield-sell-row">
@@ -1351,9 +1375,29 @@ color: var(--gold);
 
   <div class="card">
     <div class="card-title"><span>💰</span>収入と経費</div>
+    <div class="row2">
+      <div class="field">
+        <label>満室時の月額家賃（円）</label>
+        <input type="number" inputmode="numeric" id="cf-mrent" placeholder="例：330000" oninput="calcCF()">
+      </div>
+      <div class="field">
+        <label>満室時の年間家賃（万円）</label>
+        <input type="number" inputmode="decimal" id="cf-gpi" placeholder="月額から自動" oninput="calcCF()">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>管理費（円/月）</label>
+        <input type="number" inputmode="numeric" id="cf-kanri" placeholder="例：12000" oninput="calcCF()">
+      </div>
+      <div class="field">
+        <label>修繕積立金（円/月）</label>
+        <input type="number" inputmode="numeric" id="cf-shuzen" placeholder="例：10000" oninput="calcCF()">
+      </div>
+    </div>
     <div class="field">
-      <label>満室時の年間家賃（万円）</label>
-      <input type="number" inputmode="decimal" id="cf-gpi" placeholder="例：400" oninput="calcCF()">
+      <label>その他の年間経費（固都税・保険など／万円）</label>
+      <input type="number" inputmode="decimal" id="cf-other" placeholder="例：8" oninput="calcCF()">
     </div>
     <div class="row2">
       <div class="field">
@@ -1369,7 +1413,7 @@ color: var(--gold);
       <label>家賃の下落率（年 %）</label>
       <input type="number" inputmode="decimal" id="cf-decline" placeholder="空欄なら1" step="0.1" oninput="calcCF()">
     </div>
-    <div class="note">運営経費率は、空室分を引いたあとの家賃に対する割合（管理費・修繕・固都税・保険など）。一般的には15〜25%が目安。</div>
+    <div class="note">管理費・修繕積立金・その他の経費を入れた場合は、その金額を経費にする（運営経費率は空欄なら0%。賃貸管理の手数料などがあれば%で入れる）。入れない場合は、空室分を引いたあとの家賃×運営経費率（空欄なら20%）を経費にする。一般的には15〜25%が目安。</div>
 
     <div class="result-grid" id="cf-result" style="display:none">
       <div class="result-item">
@@ -1686,6 +1730,7 @@ function sendRentUnit() {
   if (!monthly) return;
   const annual = Math.round(monthly * 12 / 1000) / 10; // 万円
   ['r-rent', 'inv-rent', 'cf-gpi', 'tb-rent'].forEach(id => setValue(id, annual));
+  deriveFrom('r-rent');
   recalcAll();
   saveState();
   showToast('年間家賃 ' + annual + '万円 を入れました');
@@ -2218,7 +2263,11 @@ function calcCF() {
   if (!price || !gpi) return;
 
   const vac = num('cf-vac') / 100;
-  const opex = num('cf-opex') / 100;
+  // 管理費・積立金などを金額で入れた場合はそれを経費にし、率は空欄なら0%
+  const fixedCost = (num('cf-kanri') + num('cf-shuzen')) * 12 / 10000 + num('cf-other');
+  const opexIn = document.getElementById('cf-opex').value;
+  const opex = (opexIn !== '' ? parseFloat(opexIn) : (fixedCost > 0 ? 0 : 20)) / 100;
+  document.getElementById('cf-opex').placeholder = fixedCost > 0 ? '空欄なら0' : '空欄なら20';
   const decline = num('cf-decline') / 100;
   const hold = Math.max(Math.round(num('cf-hold')), 1);
   const equity = price + cost - loan;
@@ -2238,7 +2287,7 @@ function calcCF() {
   for (let y = 1; y <= hold; y++) {
     const rent = gpi * Math.pow(1 - decline, y - 1);
     const egi = rent * (1 - vac);
-    const noi = egi * (1 - opex);
+    const noi = egi * (1 - opex) - fixedCost;
     let ads = 0;
     for (let m = 0; m < 12 && paidMonths < months && balance > 0; m++) {
       const i = balance * rate;
@@ -2576,7 +2625,9 @@ const SUMMARY = {
     ['i', 'rt-unit', '想定の坪単価', '円/坪'], ['o', 'rt-rev', '想定坪単価での月額賃料'],
   ],
   rimawari: [
-    ['i', 'r-price', '物件価格', '万円'], ['i', 'r-rent', '年間家賃', '万円'], ['i', 'r-cost', '年間経費', '万円'],
+    ['i', 'r-price', '物件価格', '万円'], ['i', 'r-mrent', '月額家賃', '円'], ['i', 'r-rent', '年間家賃', '万円'],
+    ['i', 'r-kanri', '管理費（月）', '円'], ['i', 'r-shuzen', '修繕積立金（月）', '円'], ['i', 'r-other', 'その他の年間経費', '万円'],
+    ['i', 'r-cost', '年間経費', '万円'],
     ['o', 'r-hyomen', '表面利回り'], ['o', 'r-jissitu', '実質利回り'], ['o', 'r-monthly', '月額家賃'],
     ['h', '購入価格の目安'], ['i', 'inv-yield', '目標利回り', '%'],
     ['o', 'inv-price-hyomen', '表面利回りで見た価格'], ['o', 'inv-price-jissitu', '実質利回りで見た価格'],
@@ -2604,7 +2655,7 @@ const SUMMARY = {
     ['h', '仕入れ'], ['i', 'tb-buy', '仕入価格', '万円'], ['i', 'tb-reform', 'リフォーム', '万円'], ['i', 'tb-months', '保有期間', 'ヶ月'],
     ['h', '販売価格の目安'], ['i', 'tb-target', '目標の利益率', '%'],
     ['o', 'tb-need-sell', '必要な販売価格'], ['o', 'tb-be-sell', '赤字になる販売価格'],
-    ['h', '収益物件として売る場合'], ['i', 'tb-rent', '満室家賃', '万円'], ['i', 'tb-exit-yield', '買主の想定利回り', '%'],
+    ['h', '収益物件として売る場合'], ['i', 'tb-mrent', '満室の月額家賃', '円'], ['i', 'tb-rent', '満室家賃（年）', '万円'], ['i', 'tb-exit-yield', '買主の想定利回り', '%'],
     ['o', 'tb-yield-sell', '売れる価格'], ['o', 'tb-yield-profit', 'その価格での粗利・利益率'], ['o', 'tb-need-yield', '必要な販売価格の利回り'],
     ['h', '販売予定価格'], ['i', 'tb-sell', '販売予定価格', '万円'],
     ['o', 'tb-profit', '粗利'], ['o', 'tb-margin', '利益率'], ['o', 'tb-gap', '目標に対して'], ['o', 'tb-max-buy', '仕入の上限'],
@@ -2623,7 +2674,8 @@ const SUMMARY = {
   ],
   cf: [
     ['h', '条件'], ['i', 'cf-price', '物件価格', '万円'], ['i', 'cf-cost', '購入諸費用', '万円'], ['i', 'cf-loan', '借入金額', '万円'],
-    ['i', 'cf-rate', '金利', '%'], ['i', 'cf-years', '返済期間', '年'], ['i', 'cf-gpi', '満室時の年間家賃', '万円'],
+    ['i', 'cf-rate', '金利', '%'], ['i', 'cf-years', '返済期間', '年'], ['i', 'cf-mrent', '満室時の月額家賃', '円'], ['i', 'cf-gpi', '満室時の年間家賃', '万円'],
+    ['i', 'cf-kanri', '管理費（月）', '円'], ['i', 'cf-shuzen', '修繕積立金（月）', '円'], ['i', 'cf-other', 'その他の年間経費', '万円'],
     ['i', 'cf-vac', '空室率', '%'], ['i', 'cf-opex', '運営経費率', '%'],
     ['h', '1年目の収支'], ['o', 'cf-btcf', '手残り（税引前）'], ['o', 'cf-dscr', '返済余裕率'], ['o', 'cf-ccr', '自己資金の利回り'],
     ['o', 'cf-be-rate', '手残りがゼロになる金利'],
@@ -2663,7 +2715,8 @@ function summaryText(tab, withTables) {
       let v = el.tagName === 'SELECT' ? el.selectedOptions[0].text : el.value;
       if (el.tagName !== 'SELECT' && v === '') {
         if (DEFAULTS[key] === undefined) return;
-        v = DEFAULTS[key] + (unit || '') + '（目安）';
+        const def = key === 'cf-opex' && el.placeholder === '空欄なら0' ? 0 : DEFAULTS[key];
+        v = def + (unit || '') + '（目安）';
       } else if (el.tagName !== 'SELECT') {
         v = (el.type === 'number' ? Number(v).toLocaleString('ja-JP') : v) + (unit || '');
       }
@@ -2966,7 +3019,11 @@ const LINKED = [
   ['price', 'r-price', 's-price', 'c-price', 'cf-price', 'sk-price', 'tb-buy', 'pj-buy'], // 物件価格
   ['tb-reform', 'pj-reform'],                                                 // リフォーム費用
   ['tb-months', 'pj-months'],                                                 // 保有期間
-  ['r-rent', 'inv-rent', 'cf-gpi', 'tb-rent'],                                           // 年間家賃
+  ['r-rent', 'inv-rent', 'cf-gpi', 'tb-rent'],
+  ['r-mrent', 'cf-mrent', 'tb-mrent'],                                         // 月額家賃（円）
+  ['r-kanri', 'cf-kanri'],                                                    // 管理費（円/月）
+  ['r-shuzen', 'cf-shuzen'],                                                  // 修繕積立金（円/月）
+  ['r-other', 'cf-other'],                                                    // その他の年間経費                                           // 年間家賃
   ['r-cost', 'inv-cost'],                                                     // 年間経費
   ['l-amount', 's-loan', 'cf-loan'],                                          // 借入金額
   ['l-rate', 'cf-rate'],                                                      // 金利（長期ローン）
@@ -2986,6 +3043,28 @@ LINKED.forEach(group => group.forEach(id => {
   if (label) label.insertAdjacentHTML('beforeend', ' <span class="link-mark" title="ほかのタブと連動">🔗</span>');
 }));
 
+// 月額と年額をつなぐ：月額を入れたら年額、年額を入れたら月額を自動で入れる
+const RENT_ANNUAL = ['r-rent', 'inv-rent', 'cf-gpi', 'tb-rent'];
+const RENT_MONTHLY = ['r-mrent', 'cf-mrent', 'tb-mrent'];
+const COST_PARTS = ['r-kanri', 'r-shuzen', 'r-other'];
+
+function setGroup(ids, v) { ids.forEach(id => setValue(id, v)); }
+
+function deriveFrom(id) {
+  if (RENT_MONTHLY.includes(id)) {
+    const v = document.getElementById(id).value;
+    setGroup(RENT_ANNUAL, v === '' ? '' : Math.round(parseFloat(v) * 12 / 100) / 100);
+  } else if (RENT_ANNUAL.includes(id)) {
+    const v = document.getElementById(id).value;
+    setGroup(RENT_MONTHLY, v === '' ? '' : Math.round(parseFloat(v) * 10000 / 12));
+  } else if ((linkOf[id] || []).some(x => COST_PARTS.includes(x))) {
+    // 管理費・積立金・その他から年間諸経費を作る（全部消したら年間諸経費も空欄に戻す）
+    const anyIn = COST_PARTS.some(x => document.getElementById(x).value !== '');
+    const annual = (num('r-kanri') + num('r-shuzen')) * 12 / 10000 + num('r-other');
+    setGroup(['r-cost', 'inv-cost'], anyIn ? Math.round(annual * 100) / 100 : '');
+  }
+}
+
 document.addEventListener('input', e => {
   const group = linkOf[e.target.id];
   if (!group) return;
@@ -2996,6 +3075,7 @@ document.addEventListener('input', e => {
     const v = parseFloat(e.target.value);
     document.getElementById('tsubo').value = isNaN(v) ? '' : (v / 3.30579).toFixed(2);
   }
+  deriveFrom(e.target.id);
   recalcAll();
 }, true);
 
