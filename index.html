@@ -948,12 +948,25 @@ color: var(--gold);
       <div class="card-title" style="margin-bottom:10px"><span>🏠</span>自己居住用の軽減の条件</div>
       <div class="row2">
         <div class="field">
-          <label>床面積（㎡）</label>
-          <input type="number" inputmode="decimal" id="s-floor" placeholder="例：65" oninput="calcShohi()">
+          <label>床面積・登記簿（㎡）</label>
+          <input type="number" inputmode="decimal" id="s-floor" placeholder="例：48.5" oninput="calcShohi()">
         </div>
+        <div class="field">
+          <label>床面積・共用部分込み（㎡）</label>
+          <input type="number" inputmode="decimal" id="s-floor-acq" placeholder="区分のみ。空欄なら登記簿" oninput="calcShohi()">
+        </div>
+      </div>
+      <div class="row2">
         <div class="field">
           <label>土地の面積（㎡）</label>
           <input type="number" inputmode="decimal" id="s-land-area" placeholder="区分は敷地権の持分" oninput="calcShohi()">
+        </div>
+        <div class="field">
+          <label>所在地</label>
+          <select id="s-area-type" onchange="calcShohi()">
+            <option value="normal">通常</option>
+            <option value="tokutei">23区の特定都市再生緊急整備地域</option>
+          </select>
         </div>
       </div>
       <div class="row2">
@@ -969,7 +982,7 @@ color: var(--gold);
           </select>
         </div>
       </div>
-      <div class="note" style="margin:0 0 6px">前提：買主本人が住む住宅で、取得後1年以内に登記する。登録免許税の軽減には、市区町村の「住宅用家屋証明書」が必要。不動産取得税の軽減は、都道府県への申告が必要（取得から60日以内など、都道府県で違う）。</div>
+      <div class="note" style="margin:0 0 6px">前提：買主本人が住む住宅で、令和8年4月1日以後に取得し、取得後1年以内に登記する。登録免許税は登記簿の床面積が50㎡以上で、市区町村の「住宅用家屋証明書」が必要。不動産取得税は現況の床面積（区分は共用部分の持分を足した面積）が40㎡以上240㎡以下で判定（23区の特定都市再生緊急整備地域は50㎡以上）。東京都は取得から30日以内の申告が原則（登記すれば原則不要）、軽減の申告は60日以内が目安で、所管の都税事務所に出す。</div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>軽減</th><th>判定</th><th>内容</th></tr></thead>
@@ -999,7 +1012,7 @@ color: var(--gold);
         <span class="result-value" id="s-later" style="color:var(--gold)">—</span>
       </div>
       <button class="link-btn" onclick="sendShohi()">この価格と諸費用を「収支・売却」に入れる →</button>
-      <p class="note">※概算。登録免許税：土地の移転1.5%（令和11年3月末まで）、建物の移転2%・新築の保存0.4%・抵当権0.4%。自己居住用を選ぶと、床面積・建築年月から軽減が使えるかを判定し、使えるものだけ計算に入れる（建物の移転0.3%・保存0.15%・抵当権0.1%、不動産取得税の建物の控除と土地の減額）。区分マンションの床面積は、登録免許税は登記簿の面積、不動産取得税は共用部分の持分を足した面積で見るので、50㎡前後の物件は個別に確認すること。認定長期優良住宅などのさらに大きい軽減は入れていない。不動産取得税：土地は評価額の1/2に3%、建物は住宅3%・住宅以外4%。投資用・事業用では、新築住宅の控除などの住宅向けの軽減は入れていない。印紙税は令和9年3月末までの軽減税率。⏰の不動産取得税は、決済の時ではなく、登記のあと都道府県から納税通知書が届いてから払う（届く時期は都道府県で違い、例えば栃木県は登記完了から4〜6か月後）。仲介手数料は、契約時に半金・決済時に残金を払う形が多い。ここの仲介手数料は物件価格そのもので計算している。売主が業者で建物に消費税がかかる場合は、「仲介手数料」タブで消費税を除いた正確な額を確認すること。</p>
+      <p class="note">※概算。登録免許税：土地の移転1.5%（令和11年3月末まで）、建物の移転2%・新築の保存0.4%・抵当権0.4%。自己居住用を選ぶと、床面積・建築年月から軽減が使えるかを判定し、使えるものだけ計算に入れる（建物の移転0.3%・保存0.15%・抵当権0.1%、不動産取得税の建物の控除と土地の減額）。区分マンションの床面積は、登録免許税は登記簿の面積、不動産取得税は共用部分の持分を足した面積で見るので、50㎡前後の物件は個別に確認すること。認定長期優良住宅などのさらに大きい軽減は入れていない。不動産取得税：土地は評価額の1/2に3%、建物は住宅3%・住宅以外4%。投資用・事業用では、新築住宅の控除などの住宅向けの軽減は入れていない。印紙税は令和9年3月末までの軽減税率。⏰の不動産取得税は、決済の時ではなく、登記のあと都道府県から納税通知書が届いてから払う（届く時期は都道府県で違う。東京都は毎月7日前後に発送し、納期限は原則その月末。軽減で税額が0円になると通知書は届かない）。仲介手数料は、契約時に半金・決済時に残金を払う形が多い。ここの仲介手数料は物件価格そのもので計算している。売主が業者で建物に消費税がかかる場合は、「仲介手数料」タブで消費税を除いた正確な額を確認すること。</p>
     </div>
   </div>
 </div>
@@ -2456,7 +2469,9 @@ function calcShohi() {
   // ===== 自己居住用の軽減の判定 =====
   show('s-self-box', self && type !== 'tochi', 'block');
   show('s-built-field', type === 'chuko', 'block');
-  const floor = num('s-floor');
+  const floor = num('s-floor');                       // 登記簿（登録免許税）
+  const floorAcq = num('s-floor-acq') || floor;       // 現況・共用部分込み（不動産取得税）
+  const acqMin = document.getElementById('s-area-type').value === 'tokutei' ? 50 : 40;
   const built = document.getElementById('s-built').value; // 'YYYY-MM'
   const taishin = document.getElementById('s-taishin').value === 'yes';
   const isNew = type === 'shinto';
@@ -2464,7 +2479,7 @@ function calcShohi() {
   const quakeOK = isNew || (built && built >= '1982-01') || taishin;
   show('s-taishin-field', type === 'chuko' && !(built && built >= '1982-01'), 'block');
   const regOK = self && floor >= 50 && quakeOK;           // 登録免許税の軽減
-  const acqOK = self && floor >= 50 && floor <= 240 && quakeOK; // 不動産取得税の軽減
+  const acqOK = self && floorAcq >= acqMin && floorAcq <= 240 && quakeOK; // 不動産取得税の軽減（令和8年4月以後の取得）
   // 中古住宅の控除額（建てた時期で決まる・万円）
   const usedDeduction = ym => {
     if (!ym) return 0;
@@ -2479,11 +2494,11 @@ function calcShohi() {
   let landReduce = 0;
   if (acqOK && landEval > 0) {
     const perSqm = landArea > 0 ? landEval * 0.5 / landArea : 0;
-    landReduce = Math.min(Math.max(4.5, perSqm * Math.min(floor * 2, 200) * 0.03), landTaxFull);
+    landReduce = Math.min(Math.max(4.5, perSqm * Math.min(floorAcq * 2, 200) * 0.03), landTaxFull);
   }
   if (self && type !== 'tochi') {
     const why = () => !floor ? '床面積を入れてね' : floor < 50 ? '床面積が50㎡未満' : !quakeOK ? (built ? '昭和56年以前の建築で耐震の証明なし' : '建築年月を入れてね') : '';
-    const whyAcq = () => floor > 240 ? '床面積が240㎡超' : why();
+    const whyAcq = () => !floorAcq ? '床面積を入れてね' : floorAcq < acqMin ? '床面積が' + acqMin + '㎡未満' : floorAcq > 240 ? '床面積が240㎡超' : !quakeOK ? why() : '';
     const rows = [
       ['登録免許税（建物）', regOK, regOK ? (isNew ? '保存 0.4%→0.15%' : '移転 2%→0.3%') : why()],
       ['登録免許税（抵当権）', regOK && loan > 0, loan > 0 ? (regOK ? '0.4%→0.1%' : why()) : '借入なし'],
@@ -3332,7 +3347,8 @@ const SUMMARY = {
   ],
   shohi: [
     ['i', 's-price', '物件価格', '万円'], ['i', 's-type', '種別'], ['i', 's-use', '用途'], ['i', 's-loan', '借入金額', '万円'],
-    ['i', 's-floor', '床面積', '㎡'], ['i', 's-built', '建築年月'], ['tb', 's-kei-table', '自己居住用の軽減'],
+    ['i', 's-floor', '床面積（登記簿）', '㎡'], ['i', 's-floor-acq', '床面積（共用部分込み）', '㎡'], ['i', 's-area-type', '所在地'], ['i', 's-built', '建築年月'],
+    ['tb', 's-kei-table', '自己居住用の軽減'],
     ['o', 's-total', '諸費用の合計（概算）'],
     ['tb', 'shohi-table', '内訳'],
   ],
