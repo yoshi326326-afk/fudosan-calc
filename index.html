@@ -923,8 +923,9 @@ color: var(--gold);
     <div class="field">
       <label>用途</label>
       <select id="s-use" onchange="calcShohi()">
-        <option value="invest">投資用（住宅）</option>
-        <option value="self">自己居住用（住宅の軽減を判定）</option>
+        <option value="invest">個人・投資用（住宅を貸す）</option>
+        <option value="self">個人・自分が住む</option>
+        <option value="corp">法人・住宅</option>
         <option value="biz">事業用（住宅以外）</option>
       </select>
     </div>
@@ -945,7 +946,7 @@ color: var(--gold);
 
     <div id="s-self-box" style="display:none">
       <hr class="divider">
-      <div class="card-title" style="margin-bottom:10px"><span>🏠</span>自己居住用の軽減の条件</div>
+      <div class="card-title" style="margin-bottom:10px"><span>🏠</span>住宅の軽減の条件</div>
       <div class="row2">
         <div class="field">
           <label>床面積・登記簿（㎡）</label>
@@ -973,6 +974,13 @@ color: var(--gold);
         <div class="field" id="s-built-field">
           <label>建築年月（中古）</label>
           <input type="month" id="s-built" onchange="calcShohi()" style="color-scheme:dark;">
+        </div>
+        <div class="field" id="s-kaitori-field">
+          <label>買取再販の物件</label>
+          <select id="s-kaitori" onchange="calcShohi()">
+            <option value="no">いいえ</option>
+            <option value="yes">はい（業者がリフォームして販売）</option>
+          </select>
         </div>
         <div class="field" id="s-taishin-field">
           <label>耐震基準の証明</label>
@@ -1012,7 +1020,7 @@ color: var(--gold);
         <span class="result-value" id="s-later" style="color:var(--gold)">—</span>
       </div>
       <button class="link-btn" onclick="sendShohi()">この価格と諸費用を「収支・売却」に入れる →</button>
-      <p class="note">※概算。登録免許税：土地の移転1.5%（令和11年3月末まで）、建物の移転2%・新築の保存0.4%・抵当権0.4%。自己居住用を選ぶと、床面積・建築年月から軽減が使えるかを判定し、使えるものだけ計算に入れる（建物の移転0.3%・保存0.15%・抵当権0.1%、不動産取得税の建物の控除と土地の減額）。区分マンションの床面積は、登録免許税は登記簿の面積、不動産取得税は共用部分の持分を足した面積で見るので、50㎡前後の物件は個別に確認すること。認定長期優良住宅などのさらに大きい軽減は入れていない。不動産取得税：土地は評価額の1/2に3%、建物は住宅3%・住宅以外4%。投資用・事業用では、新築住宅の控除などの住宅向けの軽減は入れていない。印紙税は令和9年3月末までの軽減税率。⏰の不動産取得税は、決済の時ではなく、登記のあと都道府県から納税通知書が届いてから払う（届く時期は都道府県で違う。東京都は毎月7日前後に発送し、納期限は原則その月末。軽減で税額が0円になると通知書は届かない）。仲介手数料は、契約時に半金・決済時に残金を払う形が多い。ここの仲介手数料は物件価格そのもので計算している。売主が業者で建物に消費税がかかる場合は、「仲介手数料」タブで消費税を除いた正確な額を確認すること。</p>
+      <p class="note">※概算。登録免許税：土地の移転1.5%（令和11年3月末まで）、建物の移転2%・新築の保存0.4%・抵当権0.4%。自己居住用を選ぶと、床面積・建築年月から軽減が使えるかを判定し、使えるものだけ計算に入れる（建物の移転0.3%・保存0.15%・抵当権0.1%、不動産取得税の建物の控除と土地の減額）。区分マンションの床面積は、登録免許税は登記簿の面積、不動産取得税は共用部分の持分を足した面積で見るので、50㎡前後の物件は個別に確認すること。認定長期優良住宅などのさらに大きい軽減は入れていない。不動産取得税：土地は評価額の1/2に3%、建物は住宅3%・住宅以外4%。新築の住宅は、投資用・法人でも不動産取得税の控除（1戸ごとに1,200万円）を入れる（自分が住む必要はない。法人の扱いは都税事務所で確認）。登録免許税の軽減と中古住宅の控除は、個人が自分で住む場合だけ。買取再販の物件（業者が一定のリフォームをして2年以内に販売）を個人が住むために買う場合は、建物の移転登記が0.1%（令和9年3月末まで・増改築等工事証明書が必要）。印紙税は令和9年3月末までの軽減税率。⏰の不動産取得税は、決済の時ではなく、登記のあと都道府県から納税通知書が届いてから払う（届く時期は都道府県で違う。東京都は毎月7日前後に発送し、納期限は原則その月末。軽減で税額が0円になると通知書は届かない）。仲介手数料は、契約時に半金・決済時に残金を払う形が多い。ここの仲介手数料は物件価格そのもので計算している。売主が業者で建物に消費税がかかる場合は、「仲介手数料」タブで消費税を除いた正確な額を確認すること。</p>
     </div>
   </div>
 </div>
@@ -1200,6 +1208,65 @@ color: var(--gold);
       <input type="number" inputmode="decimal" id="tb-buy-other" placeholder="例：20" oninput="calcTenbai()">
     </div>
     <div class="note">評価額が両方とも空欄のときは、仕入価格の7割を評価額とみなし、土地と建物を「建物の割合」（空欄なら半分ずつ）で分けて仮計算する（内訳に「（仮）」と出る）。登録免許税＝土地評価額×1.5%（令和11年3月末までの軽減）＋建物評価額×2%。不動産取得税＝土地評価額×1/2×3%＋建物評価額×用途の税率。買取再販の減額特例は入れていないので、使える場合は税額が下がる。</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🏷️</span>買取再販の特例（不動産取得税）</div>
+    <div class="field">
+      <label>特例を使う</label>
+      <select id="tb-kaitori" onchange="calcTenbai()">
+        <option value="no">使わない</option>
+        <option value="yes">使う</option>
+      </select>
+    </div>
+    <div id="tb-kaitori-box" style="display:none">
+      <div class="row2">
+        <div class="field">
+          <label>建築年月</label>
+          <input type="month" id="tb-built" onchange="calcTenbai()" style="color-scheme:dark;">
+        </div>
+        <div class="field">
+          <label>床面積・改修後（㎡）</label>
+          <input type="number" inputmode="decimal" id="tb-floor" placeholder="区分は共用部分込み" oninput="calcTenbai()">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>土地の面積（㎡）</label>
+          <input type="number" inputmode="decimal" id="tb-land-area" placeholder="区分は敷地権の持分" oninput="calcTenbai()">
+        </div>
+        <div class="field">
+          <label>瑕疵保険・安心R住宅（土地の減額）</label>
+          <select id="tb-hoken" onchange="calcTenbai()">
+            <option value="yes">入る</option>
+            <option value="no">入らない</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>改修工事の要件</label>
+          <select id="tb-kouji" onchange="calcTenbai()">
+            <option value="yes">満たす</option>
+            <option value="no">満たさない・未確認</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>耐震（昭和56年以前の建物）</label>
+          <select id="tb-taishin" onchange="calcTenbai()">
+            <option value="no">証明なし</option>
+            <option value="yes">証明あり</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>要件</th><th>判定</th></tr></thead>
+          <tbody id="tb-kaitori-table"></tbody>
+        </table>
+      </div>
+      <div class="note">宅建業者が中古住宅を買い、一定の改修工事をして2年以内に個人へ売り、その人が住む場合の特例（令和9年3月末までの取得）。建物：建築時期の控除額×3%を減額（平成9年4月以後なら36万円）。土地：瑕疵保険に入るか安心R住宅なら、4.5万円か「1㎡の価格×床面積の2倍（上限200㎡）×3%」の多いほうを減額。改修工事の内容・金額の要件や手続き（取得時は徴収猶予を申請し、販売後に減額）は、都税事務所で確認すること。</div>
+    </div>
   </div>
 
   <div class="card">
@@ -2466,12 +2533,18 @@ function calcShohi() {
   const self = use === 'self';
   const mark = guessed ? '（仮）' : '';
 
-  // ===== 自己居住用の軽減の判定 =====
-  show('s-self-box', self && type !== 'tochi', 'block');
+  // ===== 住宅の軽減の判定 =====
+  // 自分が住む個人：登録免許税・取得税（新築・中古）の軽減
+  // 投資用・法人：新築住宅の取得税の控除だけ（自分が住む必要はない）
+  const isNewRental = type === 'shinto' && (use === 'invest' || use === 'corp');
+  show('s-self-box', type !== 'tochi' && (self || isNewRental), 'block');
+  show('s-kaitori-field', self && type === 'chuko', 'block');
+  const kaitori = self && type === 'chuko' && document.getElementById('s-kaitori').value === 'yes';
   show('s-built-field', type === 'chuko', 'block');
   const floor = num('s-floor');                       // 登記簿（登録免許税）
   const floorAcq = num('s-floor-acq') || floor;       // 現況・共用部分込み（不動産取得税）
-  const acqMin = document.getElementById('s-area-type').value === 'tokutei' ? 50 : 40;
+  // 23区の特定都市再生緊急整備地域は50㎡（賃貸用の共同住宅は40㎡とする解説があるため、貸す場合は40㎡）
+  const acqMin = document.getElementById('s-area-type').value === 'tokutei' && !isNewRental ? 50 : 40;
   const built = document.getElementById('s-built').value; // 'YYYY-MM'
   const taishin = document.getElementById('s-taishin').value === 'yes';
   const isNew = type === 'shinto';
@@ -2479,7 +2552,7 @@ function calcShohi() {
   const quakeOK = isNew || (built && built >= '1982-01') || taishin;
   show('s-taishin-field', type === 'chuko' && !(built && built >= '1982-01'), 'block');
   const regOK = self && floor >= 50 && quakeOK;           // 登録免許税の軽減
-  const acqOK = self && floorAcq >= acqMin && floorAcq <= 240 && quakeOK; // 不動産取得税の軽減（令和8年4月以後の取得）
+  const acqOK = (self || isNewRental) && floorAcq >= acqMin && floorAcq <= 240 && quakeOK; // 不動産取得税の軽減（令和8年4月以後の取得）
   // 中古住宅の控除額（建てた時期で決まる・万円）
   const usedDeduction = ym => {
     if (!ym) return 0;
@@ -2496,11 +2569,12 @@ function calcShohi() {
     const perSqm = landArea > 0 ? landEval * 0.5 / landArea : 0;
     landReduce = Math.min(Math.max(4.5, perSqm * Math.min(floorAcq * 2, 200) * 0.03), landTaxFull);
   }
-  if (self && type !== 'tochi') {
-    const why = () => !floor ? '床面積を入れてね' : floor < 50 ? '床面積が50㎡未満' : !quakeOK ? (built ? '昭和56年以前の建築で耐震の証明なし' : '建築年月を入れてね') : '';
+  if (type !== 'tochi' && (self || isNewRental)) {
+    const why = () => !self ? '個人が自分で住む場合だけ' : '' || why0();
+    const why0 = () => !floor ? '床面積を入れてね' : floor < 50 ? '床面積が50㎡未満' : !quakeOK ? (built ? '昭和56年以前の建築で耐震の証明なし' : '建築年月を入れてね') : '';
     const whyAcq = () => !floorAcq ? '床面積を入れてね' : floorAcq < acqMin ? '床面積が' + acqMin + '㎡未満' : floorAcq > 240 ? '床面積が240㎡超' : !quakeOK ? why() : '';
     const rows = [
-      ['登録免許税（建物）', regOK, regOK ? (isNew ? '保存 0.4%→0.15%' : '移転 2%→0.3%') : why()],
+      ['登録免許税（建物）', regOK, regOK ? (isNew ? '保存 0.4%→0.15%' : kaitori ? '移転 2%→0.1%（買取再販）' : '移転 2%→0.3%') : why()],
       ['登録免許税（抵当権）', regOK && loan > 0, loan > 0 ? (regOK ? '0.4%→0.1%' : why()) : '借入なし'],
       ['不動産取得税（建物）', acqOK && bldDeduction > 0, acqOK ? (bldDeduction > 0 ? '評価額から' + bldDeduction + '万円を控除' : '建築年月を入れてね') : whyAcq()],
       ['不動産取得税（土地）', acqOK && landReduce > 0, acqOK ? landReduce.toFixed(1) + '万円を減額' + (landArea ? '' : '（土地面積を入れると正確）') : whyAcq()],
@@ -2519,7 +2593,7 @@ function calcShohi() {
   items.push(['登録免許税（土地の移転）' + mark, landEval * 0.015]);
   if (bldEval > 0) {
     if (type === 'shinto') items.push(['登録免許税（建物の保存）' + mark + (regOK ? kei : ''), bldEval * (regOK ? 0.0015 : 0.004)]);
-    else items.push(['登録免許税（建物の移転）' + mark + (regOK ? kei : ''), bldEval * (regOK ? 0.003 : 0.02)]);
+    else items.push(['登録免許税（建物の移転）' + mark + (regOK ? kei : ''), bldEval * (regOK ? (kaitori ? 0.001 : 0.003) : 0.02)]);
   }
   if (loan > 0) items.push(['登録免許税（抵当権の設定）' + (regOK ? kei : ''), loan * (regOK ? 0.001 : 0.004)]);
 
@@ -2712,8 +2786,11 @@ function tenbaiProfit(buy, opt = {}) {
   const reg = landEval * num('tb-land-reg') / 100 + bldEval * 0.02;
   if (reg) items.push(['登録免許税' + mark, reg]);
 
-  const acq = landEval * 0.5 * 0.03 + bldEval * parseFloat(document.getElementById('tb-use').value) / 100;
-  if (acq) items.push(['不動産取得税' + mark, acq]);
+  let acq = landEval * 0.5 * 0.03 + bldEval * parseFloat(document.getElementById('tb-use').value) / 100;
+  // 買取再販の特例
+  const kr = kaitoriRelief(landEval, bldEval, opt.months ?? num('tb-months'));
+  acq = Math.max(acq - kr.total, 0);
+  if (acq || kr.total) items.push(['不動産取得税' + mark + (kr.total ? '（買取再販の減額' + kr.total.toFixed(1) + '万円）' : ''), acq]);
 
   const buyOther = num('tb-buy-other');
   if (buyOther) items.push(['仕入時の経費', buyOther]);
@@ -2759,6 +2836,40 @@ function tenbaiProfit(buy, opt = {}) {
   };
 }
 
+// 買取再販の特例：要件の判定と減額（万円）
+function usedHouseDeduction(ym) {
+  if (!ym) return 0;
+  const table = [['1997-04', 1200], ['1989-04', 1000], ['1985-07', 450], ['1981-07', 420], ['1976-01', 350], ['1973-01', 230], ['1964-01', 150], ['1954-07', 100]];
+  for (const [from, v] of table) if (ym >= from) return v;
+  return 0;
+}
+
+function kaitoriRelief(landEval, bldEval, months) {
+  const on = document.getElementById('tb-kaitori').value === 'yes';
+  const built = document.getElementById('tb-built').value;
+  const floor = num('tb-floor');
+  const now = new Date();
+  const tenYearsAgo = (now.getFullYear() - 10) + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  const checks = [
+    ['築10年を超えている', !!built && built <= tenYearsAgo, built ? '' : '建築年月を入れてね'],
+    ['床面積が40㎡以上240㎡以下', floor >= 40 && floor <= 240, floor ? '' : '床面積を入れてね'],
+    ['耐震（昭和57年以降の建築か証明あり）', !!built && (built >= '1982-01' || document.getElementById('tb-taishin').value === 'yes'), ''],
+    ['取得から2年以内に販売', months <= 24, ''],
+    ['改修工事の要件', document.getElementById('tb-kouji').value === 'yes', ''],
+  ];
+  const ok = on && checks.every(c => c[1]);
+  let bld = 0, land = 0;
+  if (ok) {
+    bld = Math.min(usedHouseDeduction(built) * 0.03, bldEval * 0.03);
+    if (document.getElementById('tb-hoken').value === 'yes' && landEval > 0) {
+      const area = num('tb-land-area');
+      const perSqm = area > 0 ? landEval * 0.5 / area : 0;
+      land = Math.min(Math.max(4.5, perSqm * Math.min(floor * 2, 200) * 0.03), landEval * 0.5 * 0.03);
+    }
+  }
+  return { on, ok, checks, bld, land, total: bld + land };
+}
+
 // 目標の利益率を取るのに必要な販売価格（税込）。target は 0.15 のような割合
 function requiredSell(buy, target, opt = {}) {
   const gap = s => {
@@ -2782,7 +2893,14 @@ function show(id, on, type = 'flex') {
 
 function calcTenbai() {
   const buy = num('tb-buy');
+  show('tb-kaitori-box', document.getElementById('tb-kaitori').value === 'yes', 'block');
   if (!buy) return;
+  {
+    const kr = kaitoriRelief(0, 0, num('tb-months'));
+    document.getElementById('tb-kaitori-table').innerHTML = kr.checks.map(([label, ok, hint]) =>
+      `<tr><td style="white-space:normal">${label}</td><td style="color:${ok ? 'var(--success)' : '#e57373'}">${ok ? '○' : '×' + (hint ? ' ' + hint : '')}</td></tr>`
+    ).join('');
+  }
   const sellIn = num('tb-sell');
   const targetIn = document.getElementById('tb-target').value;
   const target = num('tb-target') / 100;
@@ -3362,7 +3480,7 @@ const SUMMARY = {
     ['o', 't-remain', '耐用年数（中古）'], ['o', 't-rate', '償却率'], ['o', 't-depr', '年間の減価償却費'],
   ],
   tenbai: [
-    ['h', '仕入れ'], ['i', 'tb-buy', '仕入価格', '万円'], ['i', 'tb-reform', 'リフォーム', '万円'], ['i', 'tb-months', '保有期間', 'ヶ月'],
+    ['h', '仕入れ'], ['i', 'tb-buy', '仕入価格', '万円'], ['i', 'tb-kaitori', '買取再販の特例'], ['i', 'tb-reform', 'リフォーム', '万円'], ['i', 'tb-months', '保有期間', 'ヶ月'],
     ['h', '販売価格の目安'], ['i', 'tb-target', '目標の利益率', '%'],
     ['o', 'tb-need-sell', '必要な販売価格'], ['o', 'tb-be-sell', '赤字になる販売価格'],
     ['h', '収益物件として売る場合'], ['i', 'tb-mrent', '満室の月額家賃', '円'], ['i', 'tb-rent', '満室家賃（年）', '万円'], ['i', 'tb-exit-yield', '買主の想定利回り', '%'],
