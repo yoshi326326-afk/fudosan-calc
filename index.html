@@ -924,7 +924,7 @@ color: var(--gold);
       <label>用途</label>
       <select id="s-use" onchange="calcShohi()">
         <option value="invest">投資用（住宅）</option>
-        <option value="self">自己居住用（住宅の軽減あり）</option>
+        <option value="self">自己居住用（住宅の軽減を判定）</option>
         <option value="biz">事業用（住宅以外）</option>
       </select>
     </div>
@@ -941,6 +941,41 @@ color: var(--gold);
     <div class="field">
       <label>借入金額（万円）※現金購入なら空欄</label>
       <input type="number" inputmode="decimal" id="s-loan" placeholder="例：2700" oninput="calcShohi()">
+    </div>
+
+    <div id="s-self-box" style="display:none">
+      <hr class="divider">
+      <div class="card-title" style="margin-bottom:10px"><span>🏠</span>自己居住用の軽減の条件</div>
+      <div class="row2">
+        <div class="field">
+          <label>床面積（㎡）</label>
+          <input type="number" inputmode="decimal" id="s-floor" placeholder="例：65" oninput="calcShohi()">
+        </div>
+        <div class="field">
+          <label>土地の面積（㎡）</label>
+          <input type="number" inputmode="decimal" id="s-land-area" placeholder="区分は敷地権の持分" oninput="calcShohi()">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field" id="s-built-field">
+          <label>建築年月（中古）</label>
+          <input type="month" id="s-built" onchange="calcShohi()" style="color-scheme:dark;">
+        </div>
+        <div class="field" id="s-taishin-field">
+          <label>耐震基準の証明</label>
+          <select id="s-taishin" onchange="calcShohi()">
+            <option value="no">なし</option>
+            <option value="yes">あり（適合証明など）</option>
+          </select>
+        </div>
+      </div>
+      <div class="note" style="margin:0 0 6px">前提：買主本人が住む住宅で、取得後1年以内に登記する。登録免許税の軽減には、市区町村の「住宅用家屋証明書」が必要。不動産取得税の軽減は、都道府県への申告が必要（取得から60日以内など、都道府県で違う）。</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>軽減</th><th>判定</th><th>内容</th></tr></thead>
+          <tbody id="s-kei-table"></tbody>
+        </table>
+      </div>
     </div>
     <div class="note">登録免許税と不動産取得税は、物件価格ではなく固定資産税評価額にかかる。評価額が空欄のときは、物件価格の7割を評価額とみなし、土地と建物を半分ずつにして仮計算する（土地のみなら全部土地）。</div>
     <div id="shohi-result" style="display:none">
@@ -964,7 +999,7 @@ color: var(--gold);
         <span class="result-value" id="s-later" style="color:var(--gold)">—</span>
       </div>
       <button class="link-btn" onclick="sendShohi()">この価格と諸費用を「収支・売却」に入れる →</button>
-      <p class="note">※概算。登録免許税：土地の移転1.5%（令和11年3月末まで）、建物の移転2%・新築の保存0.4%・抵当権0.4%。自己居住用の住宅は、条件を満たせば建物の移転0.3%・保存0.15%・抵当権0.1%。不動産取得税：土地は評価額の1/2に3%、建物は住宅3%・住宅以外4%。新築住宅の1,200万円控除などの住宅向けの控除は入れていないので、該当すると取得税はさらに下がる。印紙税は令和9年3月末までの軽減税率。⏰の不動産取得税は、決済の時ではなく、登記のあと都道府県から納税通知書が届いてから払う（届く時期は都道府県で違い、例えば栃木県は登記完了から4〜6か月後）。仲介手数料は、契約時に半金・決済時に残金を払う形が多い。ここの仲介手数料は物件価格そのもので計算している。売主が業者で建物に消費税がかかる場合は、「仲介手数料」タブで消費税を除いた正確な額を確認すること。</p>
+      <p class="note">※概算。登録免許税：土地の移転1.5%（令和11年3月末まで）、建物の移転2%・新築の保存0.4%・抵当権0.4%。自己居住用を選ぶと、床面積・建築年月から軽減が使えるかを判定し、使えるものだけ計算に入れる（建物の移転0.3%・保存0.15%・抵当権0.1%、不動産取得税の建物の控除と土地の減額）。区分マンションの床面積は、登録免許税は登記簿の面積、不動産取得税は共用部分の持分を足した面積で見るので、50㎡前後の物件は個別に確認すること。認定長期優良住宅などのさらに大きい軽減は入れていない。不動産取得税：土地は評価額の1/2に3%、建物は住宅3%・住宅以外4%。投資用・事業用では、新築住宅の控除などの住宅向けの軽減は入れていない。印紙税は令和9年3月末までの軽減税率。⏰の不動産取得税は、決済の時ではなく、登記のあと都道府県から納税通知書が届いてから払う（届く時期は都道府県で違い、例えば栃木県は登記完了から4〜6か月後）。仲介手数料は、契約時に半金・決済時に残金を払う形が多い。ここの仲介手数料は物件価格そのもので計算している。売主が業者で建物に消費税がかかる場合は、「仲介手数料」タブで消費税を除いた正確な額を確認すること。</p>
     </div>
   </div>
 </div>
@@ -2418,20 +2453,63 @@ function calcShohi() {
   const self = use === 'self';
   const mark = guessed ? '（仮）' : '';
 
+  // ===== 自己居住用の軽減の判定 =====
+  show('s-self-box', self && type !== 'tochi', 'block');
+  show('s-built-field', type === 'chuko', 'block');
+  const floor = num('s-floor');
+  const built = document.getElementById('s-built').value; // 'YYYY-MM'
+  const taishin = document.getElementById('s-taishin').value === 'yes';
+  const isNew = type === 'shinto';
+  // 耐震：新築、昭和57年1月以降の建築、または証明あり
+  const quakeOK = isNew || (built && built >= '1982-01') || taishin;
+  show('s-taishin-field', type === 'chuko' && !(built && built >= '1982-01'), 'block');
+  const regOK = self && floor >= 50 && quakeOK;           // 登録免許税の軽減
+  const acqOK = self && floor >= 50 && floor <= 240 && quakeOK; // 不動産取得税の軽減
+  // 中古住宅の控除額（建てた時期で決まる・万円）
+  const usedDeduction = ym => {
+    if (!ym) return 0;
+    const table = [['1997-04', 1200], ['1989-04', 1000], ['1985-07', 450], ['1981-07', 420], ['1976-01', 350], ['1973-01', 230], ['1964-01', 150], ['1954-07', 100]];
+    for (const [from, v] of table) if (ym >= from) return v;
+    return 0;
+  };
+  const bldDeduction = acqOK ? (isNew ? 1200 : usedDeduction(built)) : 0;
+  const bldTaxBase = Math.max(bldEval - bldDeduction, 0);
+  const landTaxFull = landEval * 0.5 * 0.03;
+  const landArea = num('s-land-area');
+  let landReduce = 0;
+  if (acqOK && landEval > 0) {
+    const perSqm = landArea > 0 ? landEval * 0.5 / landArea : 0;
+    landReduce = Math.min(Math.max(4.5, perSqm * Math.min(floor * 2, 200) * 0.03), landTaxFull);
+  }
+  if (self && type !== 'tochi') {
+    const why = () => !floor ? '床面積を入れてね' : floor < 50 ? '床面積が50㎡未満' : !quakeOK ? (built ? '昭和56年以前の建築で耐震の証明なし' : '建築年月を入れてね') : '';
+    const whyAcq = () => floor > 240 ? '床面積が240㎡超' : why();
+    const rows = [
+      ['登録免許税（建物）', regOK, regOK ? (isNew ? '保存 0.4%→0.15%' : '移転 2%→0.3%') : why()],
+      ['登録免許税（抵当権）', regOK && loan > 0, loan > 0 ? (regOK ? '0.4%→0.1%' : why()) : '借入なし'],
+      ['不動産取得税（建物）', acqOK && bldDeduction > 0, acqOK ? (bldDeduction > 0 ? '評価額から' + bldDeduction + '万円を控除' : '建築年月を入れてね') : whyAcq()],
+      ['不動産取得税（土地）', acqOK && landReduce > 0, acqOK ? landReduce.toFixed(1) + '万円を減額' + (landArea ? '' : '（土地面積を入れると正確）') : whyAcq()],
+    ];
+    document.getElementById('s-kei-table').innerHTML = rows.map(([label, ok, text]) =>
+      `<tr><td>${label}</td><td style="color:${ok ? 'var(--success)' : 'var(--text2)'}">${ok ? '○ 使える' : '× 使えない'}</td><td style="white-space:normal">${text}</td></tr>`
+    ).join('');
+  }
+
   const items = [];
   if (type !== 'shinto') items.push(['仲介手数料（上限・税込）', chukaiFee(price)]);
   items.push(['印紙税（売買契約書）', stampTax(price)]);
   if (loan > 0) items.push(['印紙税（金銭消費貸借契約書）', stampLoan(loan)]);
 
+  const kei = '（軽減）';
   items.push(['登録免許税（土地の移転）' + mark, landEval * 0.015]);
   if (bldEval > 0) {
-    if (type === 'shinto') items.push(['登録免許税（建物の保存）' + mark, bldEval * (self ? 0.0015 : 0.004)]);
-    else items.push(['登録免許税（建物の移転）' + mark, bldEval * (self ? 0.003 : 0.02)]);
+    if (type === 'shinto') items.push(['登録免許税（建物の保存）' + mark + (regOK ? kei : ''), bldEval * (regOK ? 0.0015 : 0.004)]);
+    else items.push(['登録免許税（建物の移転）' + mark + (regOK ? kei : ''), bldEval * (regOK ? 0.003 : 0.02)]);
   }
-  if (loan > 0) items.push(['登録免許税（抵当権の設定）', loan * (self ? 0.001 : 0.004)]);
+  if (loan > 0) items.push(['登録免許税（抵当権の設定）' + (regOK ? kei : ''), loan * (regOK ? 0.001 : 0.004)]);
 
-  items.push(['不動産取得税（土地）' + mark, landEval * 0.5 * 0.03]);
-  if (bldEval > 0) items.push(['不動産取得税（建物）' + mark, bldEval * (use === 'biz' ? 0.04 : 0.03)]);
+  items.push(['不動産取得税（土地）' + mark + (landReduce > 0 ? kei : ''), Math.max(landTaxFull - landReduce, 0)]);
+  if (bldEval > 0) items.push(['不動産取得税（建物）' + mark + (bldDeduction > 0 ? kei : ''), (bldDeduction > 0 ? bldTaxBase : bldEval) * (use === 'biz' ? 0.04 : 0.03)]);
 
   items.push(['司法書士報酬（目安）', loan > 0 ? 15 : 10]);
   if (loan > 0) {
@@ -3253,7 +3331,8 @@ const SUMMARY = {
     ['tb', 'loan-policy-table', '政策金利が上がったら'], ['tb', 'loan-balance-table', '残高の推移'],
   ],
   shohi: [
-    ['i', 's-price', '物件価格', '万円'], ['i', 's-type', '種別'], ['i', 's-loan', '借入金額', '万円'],
+    ['i', 's-price', '物件価格', '万円'], ['i', 's-type', '種別'], ['i', 's-use', '用途'], ['i', 's-loan', '借入金額', '万円'],
+    ['i', 's-floor', '床面積', '㎡'], ['i', 's-built', '建築年月'], ['tb', 's-kei-table', '自己居住用の軽減'],
     ['o', 's-total', '諸費用の合計（概算）'],
     ['tb', 'shohi-table', '内訳'],
   ],
@@ -3802,6 +3881,7 @@ document.addEventListener('keydown', () => { justFocused = null; });
 
 // 表を横スクロールできる箱に入れる
 document.querySelectorAll('.tab-content table').forEach(t => {
+  if (t.parentNode.classList.contains('table-wrap')) return;
   const wrap = document.createElement('div');
   wrap.className = 'table-wrap';
   t.parentNode.insertBefore(wrap, t);
